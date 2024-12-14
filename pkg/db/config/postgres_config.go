@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/Adarsh-Kmt/SkillSetGo/pkg/db/sqlc"
+	"github.com/adarsh-kmt/skillsetgo/pkg/db/sqlc"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"

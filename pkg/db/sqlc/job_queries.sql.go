@@ -41,9 +41,9 @@ func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) error {
 
 const getJobs = `-- name: GetJobs :many
 SELECT job_id, job_role, ctc, salary_tier, apply_by_date, cgpa_cutoff, company_name, industry
-FROM job_table LEFT JOIN company_table
+FROM job_table JOIN company_table
 on job_table.company_id = company_table.company_id
-where (array_length($2::VARCHAR[], 1) = 0 OR salary_tier = ANY($2))
+where (COALESCE(array_length($2::VARCHAR[], 1), 0) = 0 OR salary_tier = ANY($2))
 and NOW() < apply_by_date
 and cgpa_cutoff <= (SELECT cgpa from student_table where student_id = $1)
 `
@@ -60,8 +60,8 @@ type GetJobsRow struct {
 	SalaryTier  string           `json:"salary_tier"`
 	ApplyByDate pgtype.Timestamp `json:"apply_by_date"`
 	CgpaCutoff  float32          `json:"cgpa_cutoff"`
-	CompanyName *string          `json:"company_name"`
-	Industry    *string          `json:"industry"`
+	CompanyName string           `json:"company_name"`
+	Industry    string           `json:"industry"`
 }
 
 func (q *Queries) GetJobs(ctx context.Context, arg GetJobsParams) ([]*GetJobsRow, error) {
