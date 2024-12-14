@@ -2,7 +2,7 @@ version: '2'
 sql:
   - schema: pkg/db/schema/schema.sql
     queries:
-      - pkg/db/queries/student_queries.sql
+      - pkg/db/queries/job_queries.sql
 
     engine: postgresql
     database:

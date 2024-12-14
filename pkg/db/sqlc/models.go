@@ -19,13 +19,12 @@ type CompanyTable struct {
 type JobTable struct {
 	JobID            int32            `json:"job_id"`
 	CompanyID        int32            `json:"company_id"`
-	EligibleBranches []string         `json:"eligible_branches"`
 	JobRole          string           `json:"job_role"`
 	Ctc              float32          `json:"ctc"`
 	SalaryTier       string           `json:"salary_tier"`
 	ApplyByDate      pgtype.Timestamp `json:"apply_by_date"`
 	CgpaCutoff       float32          `json:"cgpa_cutoff"`
-	AcceptedBranches []string         `json:"accepted_branches"`
+	EligibleBranches []string         `json:"eligible_branches"`
 }
 
 type StudentJobApplicationTable struct {
@@ -52,7 +51,7 @@ type StudentOfferTable struct {
 
 type StudentTable struct {
 	StudentID         int32   `json:"student_id"`
-	Usn               int32   `json:"usn"`
+	Usn               string  `json:"usn"`
 	Name              string  `json:"name"`
 	Branch            string  `json:"branch"`
 	Cgpa              float32 `json:"cgpa"`

@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	CreateJob(ctx context.Context, arg CreateJobParams) error
 	GetJobs(ctx context.Context, arg GetJobsParams) ([]*GetJobsRow, error)
 }
 
