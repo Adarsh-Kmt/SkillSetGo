@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	validBranches = []string{"CSE", "ISE", "CY", "CD", "ECE", "EEE", "EIE", "ETE", "ME", "CV", "AS", "BT"}
+	validBranches = []string{"CSE", "ISE", "CY", "CD", "ECE", "EEE", "EIE", "ETE", "ME", "CV", "AS", "BT", "CH"}
 )
 
 type CreateJobRequest struct {
@@ -29,10 +29,13 @@ func ValidateCreateJobRequest(request CreateJobRequest) (httpError *util.HTTPErr
 		return &util.HTTPError{StatusCode: 400, Error: "ctc cannot be negative/zero"}
 	}
 
-	if request.SalaryTier == "" || (request.SalaryTier != "Open Dream" && request.SalaryTier != "Dream") {
+	if request.SalaryTier == "" || (request.SalaryTier != "Open Dream" && request.SalaryTier != "Dream" && request.SalaryTier != "Mass Recruitment") {
 		return &util.HTTPError{StatusCode: 400, Error: "salary_tier cannot be empty, must be one of Open Dream, Dream"}
 	}
 
+	if (request.SalaryTier == "Open Dream" && request.Ctc <= 8) || (request.SalaryTier == "Dream" && request.Ctc <= 3) {
+		return &util.HTTPError{StatusCode: 400, Error: "salary tier does not match the CTC"}
+	}
 	if request.ApplyByDate == "" {
 		return &util.HTTPError{StatusCode: 400, Error: "apply_by_date cannot be empty"}
 	}
