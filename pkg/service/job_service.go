@@ -8,7 +8,7 @@ import (
 )
 
 type JobService interface {
-	GetJobs(studentId int, salaryTierFilter []string) (jobs []*sqlc.GetJobsRow, httpError *util.HTTPError)
+	GetJobs(studentId int, salaryTierFilter []string, jobRoleFilter []string, companyFilter []string) (jobs []*sqlc.GetJobsRow, httpError *util.HTTPError)
 }
 type JobServiceImpl struct {
 }
@@ -16,14 +16,17 @@ type JobServiceImpl struct {
 func NewJobServiceImpl() *JobServiceImpl {
 	return &JobServiceImpl{}
 }
-func (js *JobServiceImpl) GetJobs(studentId int, salaryTierFilter []string) (jobs []*sqlc.GetJobsRow, httpError *util.HTTPError) {
+func (js *JobServiceImpl) GetJobs(studentId int, salaryTierFilter []string, jobRoleFilter []string, companyFilter []string) (jobs []*sqlc.GetJobsRow, httpError *util.HTTPError) {
 
 	var (
 		err error
 	)
+	studentIdParam := int32(studentId)
 	params := sqlc.GetJobsParams{
-		StudentID: int32(studentId),
-		Column2:   salaryTierFilter,
+		Column1: &studentIdParam,
+		Column2: salaryTierFilter,
+		Column3: jobRoleFilter,
+		Column4: companyFilter,
 	}
 
 	if jobs, err = db.Client.GetJobs(context.Background(), params); err != nil {
