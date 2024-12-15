@@ -9,7 +9,13 @@ import (
 )
 
 type Querier interface {
+	// and cgpa_cutoff <= (SELECT cgpa from student_table where student_id = $1);
 	CreateJob(ctx context.Context, arg CreateJobParams) error
+	// apply salary tier filter
+	// apply job role filter
+	// apply company filter
+	// filter out companies whose application date expired.
+	// filter out companies for which the student's branch is not eligible
 	GetJobs(ctx context.Context, arg GetJobsParams) ([]*GetJobsRow, error)
 }
 

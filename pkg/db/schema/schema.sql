@@ -14,7 +14,9 @@ CREATE TABLE company_table(
     company_name VARCHAR(255) NOT NULL, 
     poc_name VARCHAR(255) NOT NULL,
     poc_phno VARCHAR(15) NOT NULL,
-    industry VARCHAR(255) NOT NULL
+    industry VARCHAR(255) NOT NULL,
+    username VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE job_table(

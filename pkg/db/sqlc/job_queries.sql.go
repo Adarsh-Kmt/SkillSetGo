@@ -12,6 +12,7 @@ import (
 )
 
 const createJob = `-- name: CreateJob :exec
+
 INSERT INTO job_table(company_id, job_role, ctc, salary_tier, apply_by_date, cgpa_cutoff, eligible_branches)
 VALUES($1, $2, $3, $4, $5, $6, $7)
 `
@@ -26,6 +27,7 @@ type CreateJobParams struct {
 	EligibleBranches []string         `json:"eligible_branches"`
 }
 
+// and cgpa_cutoff <= (SELECT cgpa from student_table where student_id = $1);
 func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) error {
 	_, err := q.db.Exec(ctx, createJob,
 		arg.CompanyID,
@@ -40,17 +42,22 @@ func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) error {
 }
 
 const getJobs = `-- name: GetJobs :many
-SELECT job_id, job_role, ctc, salary_tier, apply_by_date, cgpa_cutoff, company_name, industry
+SELECT job_id, job_role, ctc, salary_tier, apply_by_date, cgpa_cutoff, company_name, industry,
+       (CASE WHEN cgpa_cutoff <= (SELECT cgpa FROM student_table WHERE student_id = $1) THEN TRUE ELSE FALSE END) AS can_apply
 FROM job_table JOIN company_table
-on job_table.company_id = company_table.company_id
-where (COALESCE(array_length($2::VARCHAR[], 1), 0) = 0 OR salary_tier = ANY($2))
-and NOW() < apply_by_date
-and cgpa_cutoff <= (SELECT cgpa from student_table where student_id = $1)
+ON job_table.company_id = company_table.company_id
+WHERE (COALESCE(array_length($2::VARCHAR[], 1), 0) = 0 OR salary_tier = ANY($2))
+AND (COALESCE(array_length($3::VARCHAR[], 1), 0) = 0 OR job_role = ANY($3))
+AND (COALESCE(array_length($4::VARCHAR[], 1), 0) = 0 OR company_name = ANY($4))
+AND NOW() < apply_by_date
+AND ARRAY(SELECT branch FROM student_table WHERE student_id = $1) && eligible_branches
 `
 
 type GetJobsParams struct {
-	StudentID int32    `json:"student_id"`
-	Column2   []string `json:"column_2"`
+	Column1 *int32   `json:"column_1"`
+	Column2 []string `json:"column_2"`
+	Column3 []string `json:"column_3"`
+	Column4 []string `json:"column_4"`
 }
 
 type GetJobsRow struct {
@@ -62,10 +69,21 @@ type GetJobsRow struct {
 	CgpaCutoff  float32          `json:"cgpa_cutoff"`
 	CompanyName string           `json:"company_name"`
 	Industry    string           `json:"industry"`
+	CanApply    bool             `json:"can_apply"`
 }
 
+// apply salary tier filter
+// apply job role filter
+// apply company filter
+// filter out companies whose application date expired.
+// filter out companies for which the student's branch is not eligible
 func (q *Queries) GetJobs(ctx context.Context, arg GetJobsParams) ([]*GetJobsRow, error) {
-	rows, err := q.db.Query(ctx, getJobs, arg.StudentID, arg.Column2)
+	rows, err := q.db.Query(ctx, getJobs,
+		arg.Column1,
+		arg.Column2,
+		arg.Column3,
+		arg.Column4,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -82,6 +100,7 @@ func (q *Queries) GetJobs(ctx context.Context, arg GetJobsParams) ([]*GetJobsRow
 			&i.CgpaCutoff,
 			&i.CompanyName,
 			&i.Industry,
+			&i.CanApply,
 		); err != nil {
 			return nil, err
 		}
