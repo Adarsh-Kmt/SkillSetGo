@@ -1,8 +1,13 @@
 package entity
 
 import (
+	"fmt"
 	"github.com/adarsh-kmt/skillsetgo/pkg/util"
 	"time"
+)
+
+var (
+	validBranches = []string{"CSE", "ISE", "CY", "CD", "ECE", "EEE", "EIE", "ETE", "ME", "CV", "AS", "BT"}
 )
 
 type CreateJobRequest struct {
@@ -42,6 +47,23 @@ func ValidateCreateJobRequest(request CreateJobRequest) (httpError *util.HTTPErr
 
 	if len(request.EligibleBranches) == 0 {
 		return &util.HTTPError{StatusCode: 400, Error: "eligible_branches cannot be empty"}
+	}
+
+	for _, branch := range request.EligibleBranches {
+		if branch == "" {
+			return &util.HTTPError{StatusCode: 400, Error: "branch cannot be empty"}
+		}
+		flag := false
+		for _, validBranch := range validBranches {
+			if branch == validBranch {
+				flag = true
+				break
+			}
+		}
+		if flag == false {
+			return &util.HTTPError{StatusCode: 400, Error: fmt.Sprintf("branch must be one of these valid branches %v", validBranches)}
+		}
+
 	}
 
 	if request.CgpaCutoff < 0 || request.CgpaCutoff >= 10 {
