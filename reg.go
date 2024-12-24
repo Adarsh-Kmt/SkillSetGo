@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"log"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/Adarsh-Kmt/SkillSetGo/db"
 	"github.com/gorilla/mux"
+	_ "github.com/lib/pq"
 )
 
 type User struct {
@@ -51,5 +53,18 @@ func registerUser(w http.ResponseWriter, r *http.Request) {
 		EmailID:        user.EmailID,
 		Usn:            user.USN,
 		CounsellorName: user.CounsellorName,
+	}
+	queries := db.New(dbConn)
+	err = queries.InsertUser(context.TODO(), arg)
+	if err != nil {
+		http.Error(w, "Failed to register user", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Add("Content-type", "application/json") //response and its type- json
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(map[string]string{"message": "successful"}); err != nil {
+		panic(err)
 	}
 }
