@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 
@@ -11,8 +12,19 @@ import (
 	"github.com/gorilla/mux"
 )
 
+var dbConn *sql.DB
+
 type StudentHandler struct {
 	js service.JobService
+}
+type User struct {
+	Name           string  `json:"name" binding:"required"`
+	Branch         string  `json:"branch" binding:"required"`
+	CGPA           float64 `json:"cgpa" binding:"required"`
+	ActiveBacklogs bool    `json:"activebacklogs" binding:"required"`
+	EmailID        string  `json:"emailid" binding:"required,email"`
+	USN            string  `json:"usn" binding:"required"`
+	CounsellorName string  `json:"counsellor" binding:"required"`
 }
 
 func NewStudentHandler(js service.JobService) *StudentHandler {
@@ -26,7 +38,7 @@ func (sh *StudentHandler) MuxSetup(mux *mux.Router) *mux.Router {
 }
 
 func (sh *StudentHandler) registerUser(w http.ResponseWriter, r *http.Request) (httpError *util.HTTPError) {
-
+	var user User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
@@ -53,4 +65,5 @@ func (sh *StudentHandler) registerUser(w http.ResponseWriter, r *http.Request) (
 	if err := json.NewEncoder(w).Encode(map[string]string{"message": "successful"}); err != nil {
 		panic(err)
 	}
+	return nil
 }
