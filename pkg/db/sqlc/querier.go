@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	CreateCompany(ctx context.Context, arg CreateCompanyParams) error
 	// and cgpa_cutoff <= (SELECT cgpa from student_table where student_id = $1);
 	CreateJob(ctx context.Context, arg CreateJobParams) error
 	GetEligibleStudents(ctx context.Context, jobID int32) ([]*StudentTable, error)

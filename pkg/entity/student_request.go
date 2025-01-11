@@ -7,12 +7,13 @@ import (
 )
 
 type RegisterStudentRequest struct {
-	Name   string  `json:"name"`
-	usn    string  `json:"usn"`
-	Branch string  `json:"branch"`
-	Cgpa   float32 `json:"cgpa"`
-	Email  string  `json:"email"`
-	Phone  string  `json:"phone"`
+	Name                string  `json:"name"`
+	Usn                 string  `json:"usn"`
+	Branch              string  `json:"branch"`
+	Cgpa                float32 `json:"cgpa"`
+	Email               string  `json:"email"`
+	Phone               string  `json:"phone"`
+	counsellor_email_id string  `json:"counsellor_email_id"`
 }
 
 func ValidateRegisterStudentRequest(request RegisterStudentRequest) (httpError *util.HTTPError) {

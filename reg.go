@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Adarsh-Kmt/SkillSetGo/db"
+	"github.com/adarsh-Kmt/SkillSetGo/db"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
