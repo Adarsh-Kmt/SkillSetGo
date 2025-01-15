@@ -15,7 +15,7 @@ import (
 var dbConn *sql.DB
 
 type StudentHandler struct {
-	js service.JobService
+	ss service.StudentService
 }
 type User struct {
 	Name           string  `json:"name" binding:"required"`
@@ -27,8 +27,8 @@ type User struct {
 	CounsellorName string  `json:"counsellor" binding:"required"`
 }
 
-func NewStudentHandler(js service.JobService) *StudentHandler {
-	return &StudentHandler{js: js}
+func NewStudentHandler(ss service.StudentService) *StudentHandler {
+	return &StudentHandler{ss: ss}
 }
 
 func (sh *StudentHandler) MuxSetup(mux *mux.Router) *mux.Router {
