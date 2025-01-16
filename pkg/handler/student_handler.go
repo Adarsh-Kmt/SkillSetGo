@@ -44,13 +44,12 @@ func (sh *StudentHandler) registerUser(w http.ResponseWriter, r *http.Request) (
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 	}
 	arg := db.InsertUserParams{
+		Usn:            user.USN,
 		Name:           user.Name,
 		Branch:         user.Branch,
 		Cgpa:           user.CGPA,
 		ActiveBacklogs: user.ActiveBacklogs,
 		EmailID:        user.EmailID,
-		Usn:            user.USN,
-		CounsellorName: user.CounsellorName,
 	}
 	queries := db.New(dbConn)
 	err = queries.InsertUser(context.TODO(), arg)

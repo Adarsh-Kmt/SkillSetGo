@@ -9,6 +9,8 @@ type RegisterCompanyRequest struct {
 	PocName     string `json:"poc_name"`
 	PocPhno     string `json:"poc_phno"`
 	Industry    string `json:"industry"`
+	Username    string `json:"username"`
+	Password    string `json:"password"`
 }
 
 func ValidateRegisterCompanyRequest(request RegisterCompanyRequest) (httpError *util.HTTPError) {
