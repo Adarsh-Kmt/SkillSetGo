@@ -39,7 +39,7 @@ func (jh *JobHandler) GetJobs(w http.ResponseWriter, r *http.Request) (httpError
 
 	if salaryTierList != nil {
 		for _, salaryTier := range salaryTierList {
-			if salaryTier != "Dream" && salaryTier != "Open Dream" {
+			if salaryTier != "Dream" && salaryTier != "Open Dream" && salaryTier != "Mass Recruitment" {
 				return &util.HTTPError{StatusCode: 400, Error: "invalid salary tier url query parameter"}
 			}
 		}

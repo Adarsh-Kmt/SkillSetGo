@@ -1,12 +1,11 @@
 package handler
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
 
-	"github.com/adarsh-kmt/skillsetgo/db"
+	"github.com/adarsh-kmt/skillsetgo/pkg/entity"
 	"github.com/adarsh-kmt/skillsetgo/pkg/service"
 	"github.com/adarsh-kmt/skillsetgo/pkg/util"
 	"github.com/gorilla/mux"
@@ -39,25 +38,29 @@ func (sh *StudentHandler) MuxSetup(mux *mux.Router) *mux.Router {
 
 func (sh *StudentHandler) registerUser(w http.ResponseWriter, r *http.Request) (httpError *util.HTTPError) {
 	var user User
+	request := &entity.RegisterStudentRequest{}
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 	}
-	arg := db.InsertUserParams{
-		Usn:            user.USN,
-		Name:           user.Name,
-		Branch:         user.Branch,
-		Cgpa:           user.CGPA,
-		ActiveBacklogs: user.ActiveBacklogs,
-		EmailID:        user.EmailID,
-	}
-	queries := db.New(dbConn)
-	err = queries.InsertUser(context.TODO(), arg)
-	if err != nil {
-		http.Error(w, "Failed to register user", http.StatusInternalServerError)
-		return
-	}
+	// arg := db.InsertUserParams{
+	// 	Usn:            user.USN,
+	// 	Name:           user.Name,
+	// 	Branch:         user.Branch,
+	// 	Cgpa:           user.CGPA,
+	// 	ActiveBacklogs: user.ActiveBacklogs,
+	// 	EmailID:        user.EmailID,
+	// }
 
+	// queries := db.New(dbConn)
+	// err = queries.InsertUser(context.TODO(), arg)
+	// if err != nil {
+	// 	http.Error(w, "Failed to register user", http.StatusInternalServerError)
+	// 	return
+	// }
+	if httpError = entity.ValidateRegisterStudentRequest(*request); httpError != nil {
+		return httpError
+	}
 	w.Header().Add("Content-type", "application/json") //response and its type- json
 	w.WriteHeader(http.StatusOK)
 

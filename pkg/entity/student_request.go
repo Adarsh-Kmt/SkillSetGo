@@ -37,7 +37,7 @@ func ValidateRegisterStudentRequest(request RegisterStudentRequest) (httpError *
 	if request.Name == "" {
 		return &util.HTTPError{StatusCode: 400, Error: "Name cannot be empty"}
 	}
-	if !strings.HasPrefix(request.usn, "1RV") {
+	if !strings.HasPrefix(request.Usn, "1RV") {
 		return &util.HTTPError{StatusCode: 400, Error: "Invalid USN"}
 	}
 	substr, exists := branchemail[request.Branch]

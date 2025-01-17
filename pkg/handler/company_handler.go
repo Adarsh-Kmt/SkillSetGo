@@ -20,13 +20,13 @@ func NewCompanyHandler(cs service.CompanyService) *CompanyHandler {
 
 func (ch *CompanyHandler) MuxSetup(mux *mux.Router) *mux.Router {
 
-	mux.HandleFunc("/company", util.MakeHttpHandlerFunc(jh.GetCompanies)).Methods("GET")
-	mux.HandleFunc("/company", util.MakeHttpHandlerFunc(jh.RegisterCompany)).Methods("POST")
+	mux.HandleFunc("/company", util.MakeHttpHandlerFunc(ch.GetCompanies)).Methods("GET")
+	mux.HandleFunc("/company", util.MakeHttpHandlerFunc(ch.RegisterCompany)).Methods("POST")
 	return mux
 }
 
 // RegisterCompany handles the registration of a new company
-func (ch *CompanyHandler) RegisterCompany(w http.ResponseWriter, r *http.Request) error {
+func (ch *CompanyHandler) RegisterCompany(w http.ResponseWriter, r *http.Request) (httpError *util.HTTPError) {
 	req := &entity.RegisterCompanyRequest{}
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -46,7 +46,7 @@ func (ch *CompanyHandler) RegisterCompany(w http.ResponseWriter, r *http.Request
 }
 
 // GetCompanies handles fetching the list of companies
-func (ch *CompanyHandler) GetCompanies(w http.ResponseWriter, r *http.Request) error {
+func (ch *CompanyHandler) GetCompanies(w http.ResponseWriter, r *http.Request) *util.HTTPError {
 	request := &entity.RegisterCompanyRequest{}
 	if err := json.NewDecoder(r.Body).Decode(request); err != nil {
 		return &util.HTTPError{StatusCode: 400, Error: "bad request"}
@@ -54,6 +54,6 @@ func (ch *CompanyHandler) GetCompanies(w http.ResponseWriter, r *http.Request) e
 
 	if httpError := entity.ValidateRegisterCompanyRequest(*request); httpError != nil {
 		return httpError
-		return nil
 	}
+	return nil
 }
