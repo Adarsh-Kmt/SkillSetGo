@@ -54,10 +54,11 @@ type StudentOfferTable struct {
 type StudentTable struct {
 	StudentID         int32   `json:"student_id"`
 	Usn               string  `json:"usn"`
-	Name              string  `json:"name"`
+	Sname             string  `json:"sname"`
 	Branch            string  `json:"branch"`
 	Cgpa              float32 `json:"cgpa"`
 	NumActiveBacklogs int32   `json:"num_active_backlogs"`
+	PhoneNumber       string  `json:"phone_number"`
 	EmailID           string  `json:"email_id"`
 	CounsellorEmailID string  `json:"counsellor_email_id"`
 }

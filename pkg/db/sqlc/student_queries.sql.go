@@ -10,7 +10,7 @@ import (
 )
 
 const getEligibleStudents = `-- name: GetEligibleStudents :many
-SELECT student_table.student_id, usn, name, branch, cgpa, num_active_backlogs, email_id,counsellor_email_id
+SELECT student_table.student_id,usn, sname, branch, cgpa, num_active_backlogs,phone_number, email_id,counsellor_email_id
 FROM student_table
 JOIN student_job_application_table
 ON student_table.student_id = student_job_application_table.student_id
@@ -29,10 +29,11 @@ func (q *Queries) GetEligibleStudents(ctx context.Context, jobID int32) ([]*Stud
 		if err := rows.Scan(
 			&i.StudentID,
 			&i.Usn,
-			&i.Name,
+			&i.Sname,
 			&i.Branch,
 			&i.Cgpa,
 			&i.NumActiveBacklogs,
+			&i.PhoneNumber,
 			&i.EmailID,
 			&i.CounsellorEmailID,
 		); err != nil {
@@ -47,16 +48,17 @@ func (q *Queries) GetEligibleStudents(ctx context.Context, jobID int32) ([]*Stud
 }
 
 const insertUser = `-- name: InsertUser :exec
-INSERT INTO student_table(usn, name, branch, cgpa, num_active_backlogs, email_id,counsellor_email_id)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO student_table(usn, sname, branch, cgpa, num_active_backlogs,phone_number, email_id,counsellor_email_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 `
 
 type InsertUserParams struct {
 	Usn               string  `json:"usn"`
-	Name              string  `json:"name"`
+	Sname             string  `json:"sname"`
 	Branch            string  `json:"branch"`
 	Cgpa              float32 `json:"cgpa"`
 	NumActiveBacklogs int32   `json:"num_active_backlogs"`
+	PhoneNumber       string  `json:"phone_number"`
 	EmailID           string  `json:"email_id"`
 	CounsellorEmailID string  `json:"counsellor_email_id"`
 }
@@ -64,10 +66,11 @@ type InsertUserParams struct {
 func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) error {
 	_, err := q.db.Exec(ctx, insertUser,
 		arg.Usn,
-		arg.Name,
+		arg.Sname,
 		arg.Branch,
 		arg.Cgpa,
 		arg.NumActiveBacklogs,
+		arg.PhoneNumber,
 		arg.EmailID,
 		arg.CounsellorEmailID,
 	)

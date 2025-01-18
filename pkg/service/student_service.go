@@ -10,7 +10,7 @@ import (
 )
 
 type StudentService interface {
-	RegisterStudent(Name []string, Branch []string, CGPA float64, EmailID []string, USN []string, ActiveBacklogs bool, CounsellorName []string) (httpError *util.HTTPError)
+	RegisterStudent(request entity.RegisterStudentRequest) (httpError *util.HTTPError)
 }
 
 type StudentServiceImpl struct {
@@ -26,7 +26,7 @@ func (ss *StudentServiceImpl) RegisterStudent(request entity.RegisterStudentRequ
 	)
 	params := sqlc.InsertUserParams{
 		Usn:     request.Usn,
-		Name:    request.Name,
+		Sname:   request.Name,
 		Branch:  request.Branch,
 		Cgpa:    request.Cgpa,
 		EmailID: request.Email,
@@ -35,5 +35,5 @@ func (ss *StudentServiceImpl) RegisterStudent(request entity.RegisterStudentRequ
 	if err = db.Client.InsertUser(context.TODO(), params); err != nil {
 		return &util.HTTPError{StatusCode: 500, Error: "internal server error"}
 	}
-
+	return nil
 }

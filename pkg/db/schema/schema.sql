@@ -1,10 +1,11 @@
 CREATE TABLE student_table(
     student_id SERIAL PRIMARY KEY,
     usn VARCHAR(15) UNIQUE NOT NULL,
-    name VARCHAR(255) NOT NULL,
+    sname VARCHAR(255) NOT NULL,
     branch VARCHAR(255) NOT NULL,
     cgpa REAL NOT NULL,
-    num_active_backlogs INT NOT NULL, 
+    num_active_backlogs INT NOT NULL,
+    phone_number VARCHAR(10) NOT NULL, 
     email_id VARCHAR(255) NOT NULL, 
     counsellor_email_id VARCHAR(255) NOT NULL
 );

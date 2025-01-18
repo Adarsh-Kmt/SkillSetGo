@@ -16,15 +16,6 @@ var dbConn *sql.DB
 type StudentHandler struct {
 	ss service.StudentService
 }
-type User struct {
-	Name           string  `json:"name" binding:"required"`
-	Branch         string  `json:"branch" binding:"required"`
-	CGPA           float64 `json:"cgpa" binding:"required"`
-	ActiveBacklogs bool    `json:"activebacklogs" binding:"required"`
-	EmailID        string  `json:"emailid" binding:"required,email"`
-	USN            string  `json:"usn" binding:"required"`
-	CounsellorName string  `json:"counsellor" binding:"required"`
-}
 
 func NewStudentHandler(ss service.StudentService) *StudentHandler {
 	return &StudentHandler{ss: ss}
@@ -37,9 +28,9 @@ func (sh *StudentHandler) MuxSetup(mux *mux.Router) *mux.Router {
 }
 
 func (sh *StudentHandler) registerUser(w http.ResponseWriter, r *http.Request) (httpError *util.HTTPError) {
-	var user User
+
 	request := &entity.RegisterStudentRequest{}
-	err := json.NewDecoder(r.Body).Decode(&user)
+	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 	}
@@ -61,9 +52,11 @@ func (sh *StudentHandler) registerUser(w http.ResponseWriter, r *http.Request) (
 	if httpError = entity.ValidateRegisterStudentRequest(*request); httpError != nil {
 		return httpError
 	}
+	if httpError = sh.ss.RegisterStudent(*request); httpError != nil {
+		return httpError
+	}
 	w.Header().Add("Content-type", "application/json") //response and its type- json
 	w.WriteHeader(http.StatusOK)
-
 	if err := json.NewEncoder(w).Encode(map[string]string{"message": "successful"}); err != nil {
 		panic(err)
 	}
