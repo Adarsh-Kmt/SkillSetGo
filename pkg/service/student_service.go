@@ -25,11 +25,14 @@ func (ss *StudentServiceImpl) RegisterStudent(request entity.RegisterStudentRequ
 		err error
 	)
 	params := sqlc.InsertUserParams{
-		Usn:     request.Usn,
-		Sname:   request.Name,
-		Branch:  request.Branch,
-		Cgpa:    request.Cgpa,
-		EmailID: request.Email,
+		Usn:               request.Usn,
+		Sname:             request.Name,
+		Branch:            request.Branch,
+		Cgpa:              request.Cgpa,
+		EmailID:           request.Email,
+		PhoneNumber:       request.Phone,
+		CounsellorEmailID: request.CounsellorEmailID,
+		NumActiveBacklogs: int32(request.NumberOfBacklogs),
 	}
 
 	if err = db.Client.InsertUser(context.TODO(), params); err != nil {
