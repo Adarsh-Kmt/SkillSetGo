@@ -40,3 +40,61 @@ func (q *Queries) AuthenticateStudent(ctx context.Context, arg AuthenticateStude
 	err := row.Scan(&student_id)
 	return student_id, err
 }
+
+const createCompany = `-- name: CreateCompany :exec
+INSERT INTO company_table (company_name, poc_name, poc_phno, industry, username, password)
+VALUES ($1, $2, $3, $4, $5, $6)
+`
+
+type CreateCompanyParams struct {
+	CompanyName string `json:"company_name"`
+	PocName     string `json:"poc_name"`
+	PocPhno     string `json:"poc_phno"`
+	Industry    string `json:"industry"`
+	Username    string `json:"username"`
+	Password    string `json:"password"`
+}
+
+func (q *Queries) CreateCompany(ctx context.Context, arg CreateCompanyParams) error {
+	_, err := q.db.Exec(ctx, createCompany,
+		arg.CompanyName,
+		arg.PocName,
+		arg.PocPhno,
+		arg.Industry,
+		arg.Username,
+		arg.Password,
+	)
+	return err
+}
+
+const insertUser = `-- name: InsertUser :exec
+INSERT INTO student_table(usn, name, password, branch, batch,cgpa, num_active_backlogs,email_id,counsellor_email_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+`
+
+type InsertUserParams struct {
+	Usn               string  `json:"usn"`
+	Name              string  `json:"name"`
+	Password          string  `json:"password"`
+	Branch            string  `json:"branch"`
+	Batch             int32   `json:"batch"`
+	Cgpa              float32 `json:"cgpa"`
+	NumActiveBacklogs int32   `json:"num_active_backlogs"`
+	EmailID           string  `json:"email_id"`
+	CounsellorEmailID string  `json:"counsellor_email_id"`
+}
+
+func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) error {
+	_, err := q.db.Exec(ctx, insertUser,
+		arg.Usn,
+		arg.Name,
+		arg.Password,
+		arg.Branch,
+		arg.Batch,
+		arg.Cgpa,
+		arg.NumActiveBacklogs,
+		arg.EmailID,
+		arg.CounsellorEmailID,
+	)
+	return err
+}

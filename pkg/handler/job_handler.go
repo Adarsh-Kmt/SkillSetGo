@@ -2,12 +2,13 @@ package handler
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/adarsh-kmt/skillsetgo/pkg/db/sqlc"
 	"github.com/adarsh-kmt/skillsetgo/pkg/entity"
 	"github.com/adarsh-kmt/skillsetgo/pkg/service"
 	"github.com/adarsh-kmt/skillsetgo/pkg/util"
 	"github.com/gorilla/mux"
-	"net/http"
 )
 
 type JobHandler struct {
@@ -28,9 +29,13 @@ func (jh *JobHandler) MuxSetup(mux *mux.Router) *mux.Router {
 func (jh *JobHandler) GetJobs(w http.ResponseWriter, r *http.Request) (httpError *util.HTTPError) {
 
 	var (
-		jobs []*sqlc.GetJobsRow
+		jobs   []*sqlc.GetJobsRow
+		userId int
 	)
 
+	if userId, httpError = util.ValidateAccessToken(r.Header.Get("Auth")); httpError != nil {
+		return httpError
+	}
 	queryParams := r.URL.Query()
 	salaryTierList := queryParams["salary-tier"]
 	companyList := queryParams["company"]
@@ -43,7 +48,7 @@ func (jh *JobHandler) GetJobs(w http.ResponseWriter, r *http.Request) (httpError
 	}
 
 	//log.Println(salaryTierList)
-	if jobs, httpError = jh.jobService.GetJobs(1, salaryTierList, jobRoleList, companyList); httpError != nil {
+	if jobs, httpError = jh.jobService.GetJobs(userId, salaryTierList, jobRoleList, companyList); httpError != nil {
 		return httpError
 	}
 

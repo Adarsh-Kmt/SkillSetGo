@@ -82,7 +82,7 @@ FROM student_offer_table JOIN job_table
 ON student_offer_table.job_id = job_table.job_id
 JOIN company_table
 ON job_table.company_id = company_table.company_id
-WHERE student_id = $1
+AND student_id = $1
 `
 
 type GetJobOffersRow struct {
