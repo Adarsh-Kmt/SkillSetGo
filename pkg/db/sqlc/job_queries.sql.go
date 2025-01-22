@@ -13,29 +13,33 @@ import (
 
 const createJob = `-- name: CreateJob :exec
 
-INSERT INTO job_table(company_id, job_role, ctc, salary_tier, apply_by_date, cgpa_cutoff, eligible_branches)
-VALUES($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO job_table(company_id, job_role, job_type, ctc, salary_tier, apply_by_date, cgpa_cutoff, eligible_batch, eligible_branches)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
 `
 
 type CreateJobParams struct {
 	CompanyID        int32            `json:"company_id"`
 	JobRole          string           `json:"job_role"`
+	JobType          string           `json:"job_type"`
 	Ctc              float32          `json:"ctc"`
 	SalaryTier       string           `json:"salary_tier"`
 	ApplyByDate      pgtype.Timestamp `json:"apply_by_date"`
 	CgpaCutoff       float32          `json:"cgpa_cutoff"`
+	EligibleBatch    int32            `json:"eligible_batch"`
 	EligibleBranches []string         `json:"eligible_branches"`
 }
 
-// and cgpa_cutoff <= (SELECT cgpa from student_table where student_id = $1);
+// AND cgpa_cutoff <= (SELECT cgpa from student_table where student_id = $1);
 func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) error {
 	_, err := q.db.Exec(ctx, createJob,
 		arg.CompanyID,
 		arg.JobRole,
+		arg.JobType,
 		arg.Ctc,
 		arg.SalaryTier,
 		arg.ApplyByDate,
 		arg.CgpaCutoff,
+		arg.EligibleBatch,
 		arg.EligibleBranches,
 	)
 	return err
@@ -43,7 +47,11 @@ func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) error {
 
 const getJobs = `-- name: GetJobs :many
 SELECT job_id, job_role, ctc, salary_tier, apply_by_date, cgpa_cutoff, company_name, industry,
-       (CASE WHEN cgpa_cutoff <= (SELECT cgpa FROM student_table WHERE student_id = $1) THEN TRUE ELSE FALSE END) AS can_apply
+       (CASE WHEN 
+       (COALESCE(array_length($5::VARCHAR[], 1), 0) = 0 OR job_type <> ANY($5)) OR 
+       cgpa_cutoff <= (SELECT cgpa FROM student_table WHERE student_id = $1) THEN TRUE 
+       ELSE FALSE 
+       END) AS can_apply
 FROM job_table JOIN company_table
 ON job_table.company_id = company_table.company_id
 WHERE (COALESCE(array_length($2::VARCHAR[], 1), 0) = 0 OR salary_tier = ANY($2))
@@ -51,6 +59,7 @@ AND (COALESCE(array_length($3::VARCHAR[], 1), 0) = 0 OR job_role = ANY($3))
 AND (COALESCE(array_length($4::VARCHAR[], 1), 0) = 0 OR company_name = ANY($4))
 AND NOW() < apply_by_date
 AND ARRAY(SELECT branch FROM student_table WHERE student_id = $1) && eligible_branches
+AND job_table.eligible_batch = (SELECT batch from student_table where student_id = $1)
 `
 
 type GetJobsParams struct {
@@ -58,6 +67,7 @@ type GetJobsParams struct {
 	Column2 []string `json:"column_2"`
 	Column3 []string `json:"column_3"`
 	Column4 []string `json:"column_4"`
+	Column5 []string `json:"column_5"`
 }
 
 type GetJobsRow struct {
@@ -72,17 +82,13 @@ type GetJobsRow struct {
 	CanApply    bool             `json:"can_apply"`
 }
 
-// apply salary tier filter
-// apply job role filter
-// apply company filter
-// filter out companies whose application date expired.
-// filter out companies for which the student's branch is not eligible
 func (q *Queries) GetJobs(ctx context.Context, arg GetJobsParams) ([]*GetJobsRow, error) {
 	rows, err := q.db.Query(ctx, getJobs,
 		arg.Column1,
 		arg.Column2,
 		arg.Column3,
 		arg.Column4,
+		arg.Column5,
 	)
 	if err != nil {
 		return nil, err
@@ -110,4 +116,20 @@ func (q *Queries) GetJobs(ctx context.Context, arg GetJobsParams) ([]*GetJobsRow
 		return nil, err
 	}
 	return items, nil
+}
+
+const offerJob = `-- name: OfferJob :exec
+INSERT INTO student_offer_table(student_id, job_id, action, action_date, act_by_date)
+VALUES($1, $2, 'PENDING', NULL, $3)
+`
+
+type OfferJobParams struct {
+	StudentID int32            `json:"student_id"`
+	JobID     int32            `json:"job_id"`
+	ActByDate pgtype.Timestamp `json:"act_by_date"`
+}
+
+func (q *Queries) OfferJob(ctx context.Context, arg OfferJobParams) error {
+	_, err := q.db.Exec(ctx, offerJob, arg.StudentID, arg.JobID, arg.ActByDate)
+	return err
 }

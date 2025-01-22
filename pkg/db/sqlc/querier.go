@@ -6,17 +6,22 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
-	// and cgpa_cutoff <= (SELECT cgpa from student_table where student_id = $1);
+	AuthenticateCompany(ctx context.Context, arg AuthenticateCompanyParams) (int32, error)
+	AuthenticateStudent(ctx context.Context, arg AuthenticateStudentParams) (int32, error)
+	// AND cgpa_cutoff <= (SELECT cgpa from student_table where student_id = $1);
 	CreateJob(ctx context.Context, arg CreateJobParams) error
-	// apply salary tier filter
-	// apply job role filter
-	// apply company filter
-	// filter out companies whose application date expired.
-	// filter out companies for which the student's branch is not eligible
+	GetEligibleStudents(ctx context.Context, jobID int32) ([]*GetEligibleStudentsRow, error)
+	GetJobOfferActByDate(ctx context.Context, arg GetJobOfferActByDateParams) (pgtype.Timestamp, error)
+	GetJobOffers(ctx context.Context, studentID int32) ([]*GetJobOffersRow, error)
 	GetJobs(ctx context.Context, arg GetJobsParams) ([]*GetJobsRow, error)
+	OfferJob(ctx context.Context, arg OfferJobParams) error
+	PerformJobOfferAction(ctx context.Context, arg PerformJobOfferActionParams) error
+	RegisterForJob(ctx context.Context, arg RegisterForJobParams) error
 }
 
 var _ Querier = (*Queries)(nil)

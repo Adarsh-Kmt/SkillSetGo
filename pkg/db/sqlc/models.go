@@ -14,16 +14,20 @@ type CompanyTable struct {
 	PocName     string `json:"poc_name"`
 	PocPhno     string `json:"poc_phno"`
 	Industry    string `json:"industry"`
+	Username    string `json:"username"`
+	Password    string `json:"password"`
 }
 
 type JobTable struct {
 	JobID            int32            `json:"job_id"`
 	CompanyID        int32            `json:"company_id"`
 	JobRole          string           `json:"job_role"`
+	JobType          string           `json:"job_type"`
 	Ctc              float32          `json:"ctc"`
 	SalaryTier       string           `json:"salary_tier"`
 	ApplyByDate      pgtype.Timestamp `json:"apply_by_date"`
 	CgpaCutoff       float32          `json:"cgpa_cutoff"`
+	EligibleBatch    int32            `json:"eligible_batch"`
 	EligibleBranches []string         `json:"eligible_branches"`
 }
 
@@ -52,8 +56,10 @@ type StudentOfferTable struct {
 type StudentTable struct {
 	StudentID         int32   `json:"student_id"`
 	Usn               string  `json:"usn"`
+	Password          string  `json:"password"`
 	Name              string  `json:"name"`
 	Branch            string  `json:"branch"`
+	Batch             int32   `json:"batch"`
 	Cgpa              float32 `json:"cgpa"`
 	NumActiveBacklogs int32   `json:"num_active_backlogs"`
 	EmailID           string  `json:"email_id"`

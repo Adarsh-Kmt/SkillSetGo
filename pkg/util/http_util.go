@@ -7,7 +7,7 @@ import (
 
 type HTTPError struct {
 	StatusCode int
-	Error      string
+	Error      any
 }
 type HTTPFunc func(w http.ResponseWriter, r *http.Request) *HTTPError
 

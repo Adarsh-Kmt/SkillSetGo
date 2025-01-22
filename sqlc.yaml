@@ -3,6 +3,8 @@ sql:
   - schema: pkg/db/schema/schema.sql
     queries:
       - pkg/db/queries/job_queries.sql
+      - pkg/db/queries/auth_queries.sql
+      - pkg/db/queries/student_queries.sql
 
     engine: postgresql
     database:
