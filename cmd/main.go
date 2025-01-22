@@ -17,12 +17,14 @@ func main() {
 	}
 	jobService := service.NewJobServiceImpl()
 	studentService := service.NewStudentServiceImpl()
-
+	companyService := service.NewCompanyServiceImpl()
 	jobHandler := handler.NewJobHandler(jobService)
 	studentHandler := handler.NewStudentHandler(studentService)
+	companyHandler := handler.NewCompanyHandler(companyService)
 	router := mux.NewRouter()
 	router = jobHandler.MuxSetup(router)
 	router = studentHandler.MuxSetup(router)
+	router = companyHandler.MuxSetup(router)
 	if err := http.ListenAndServe(":8080", router); err != nil {
 		log.Fatal(err)
 	}

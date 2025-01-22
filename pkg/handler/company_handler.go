@@ -42,6 +42,10 @@ func (ch *CompanyHandler) RegisterCompany(w http.ResponseWriter, r *http.Request
 		return httpError
 	}
 
+	if httpError := ch.cs.RegisterCompany(*req); httpError != nil {
+		return httpError
+	}
+	util.WriteJSON(w, http.StatusOK, map[string]interface{}{"message": "Company registered successfully"})
 	return nil
 }
 
@@ -55,5 +59,6 @@ func (ch *CompanyHandler) GetCompanies(w http.ResponseWriter, r *http.Request) *
 	if httpError := entity.ValidateRegisterCompanyRequest(*request); httpError != nil {
 		return httpError
 	}
+
 	return nil
 }

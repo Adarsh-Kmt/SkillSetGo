@@ -37,13 +37,12 @@ func (jh *JobHandler) GetJobs(w http.ResponseWriter, r *http.Request) (httpError
 	companyList := queryParams["company"]
 	jobRoleList := queryParams["job-role"]
 
-	if salaryTierList != nil {
-		for _, salaryTier := range salaryTierList {
-			if salaryTier != "Dream" && salaryTier != "Open Dream" && salaryTier != "Mass Recruitment" {
-				return &util.HTTPError{StatusCode: 400, Error: "invalid salary tier url query parameter"}
-			}
+	for _, salaryTier := range salaryTierList {
+		if salaryTier != "Dream" && salaryTier != "Open Dream" && salaryTier != "Mass Recruitment" {
+			return &util.HTTPError{StatusCode: 400, Error: "invalid salary tier url query parameter"}
 		}
 	}
+
 	//log.Println(salaryTierList)
 	if jobs, httpError = jh.js.GetJobs(1, salaryTierList, jobRoleList, companyList); httpError != nil {
 		return httpError

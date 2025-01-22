@@ -10,7 +10,7 @@ import (
 )
 
 type CompanyService interface {
-	RegisterCompany(CompanyName string, PocName string, PocPhno string, Industry string) (httpError *util.HTTPError)
+	RegisterCompany(request entity.RegisterCompanyRequest) (httpError *util.HTTPError)
 }
 
 type CompanyServiceImpl struct {

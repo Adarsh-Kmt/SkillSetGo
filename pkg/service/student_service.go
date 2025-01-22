@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"log"
 
 	db "github.com/adarsh-kmt/skillsetgo/pkg/db/config"
 	"github.com/adarsh-kmt/skillsetgo/pkg/db/sqlc"
@@ -36,6 +37,7 @@ func (ss *StudentServiceImpl) RegisterStudent(request entity.RegisterStudentRequ
 	}
 
 	if err = db.Client.InsertUser(context.TODO(), params); err != nil {
+		log.Println(err.Error())
 		return &util.HTTPError{StatusCode: 500, Error: "internal server error"}
 	}
 	return nil
