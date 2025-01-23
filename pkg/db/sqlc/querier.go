@@ -13,12 +13,14 @@ import (
 type Querier interface {
 	AuthenticateCompany(ctx context.Context, arg AuthenticateCompanyParams) (int32, error)
 	AuthenticateStudent(ctx context.Context, arg AuthenticateStudentParams) (int32, error)
+	CreateCompany(ctx context.Context, arg CreateCompanyParams) error
 	// AND cgpa_cutoff <= (SELECT cgpa from student_table where student_id = $1);
 	CreateJob(ctx context.Context, arg CreateJobParams) error
 	GetEligibleStudents(ctx context.Context, jobID int32) ([]*GetEligibleStudentsRow, error)
 	GetJobOfferActByDate(ctx context.Context, arg GetJobOfferActByDateParams) (pgtype.Timestamp, error)
 	GetJobOffers(ctx context.Context, studentID int32) ([]*GetJobOffersRow, error)
 	GetJobs(ctx context.Context, arg GetJobsParams) ([]*GetJobsRow, error)
+	InsertUser(ctx context.Context, arg InsertUserParams) error
 	OfferJob(ctx context.Context, arg OfferJobParams) error
 	PerformJobOfferAction(ctx context.Context, arg PerformJobOfferActionParams) error
 	RegisterForJob(ctx context.Context, arg RegisterForJobParams) error

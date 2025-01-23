@@ -30,4 +30,4 @@ UPDATE student_offer_table SET action = $3, action_date = NOW()
 WHERE student_id = $1
 AND job_id = $2;
 
--- name: GetAcceptedJob
+

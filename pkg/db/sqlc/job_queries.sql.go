@@ -48,7 +48,6 @@ func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) error {
 const getJobs = `-- name: GetJobs :many
 SELECT job_id, job_role, ctc, salary_tier, apply_by_date, cgpa_cutoff, company_name, industry,
        (CASE WHEN 
-       (COALESCE(array_length($5::VARCHAR[], 1), 0) = 0 OR job_type <> ANY($5)) OR 
        cgpa_cutoff <= (SELECT cgpa FROM student_table WHERE student_id = $1) THEN TRUE 
        ELSE FALSE 
        END) AS can_apply
@@ -67,7 +66,6 @@ type GetJobsParams struct {
 	Column2 []string `json:"column_2"`
 	Column3 []string `json:"column_3"`
 	Column4 []string `json:"column_4"`
-	Column5 []string `json:"column_5"`
 }
 
 type GetJobsRow struct {
@@ -88,7 +86,6 @@ func (q *Queries) GetJobs(ctx context.Context, arg GetJobsParams) ([]*GetJobsRow
 		arg.Column2,
 		arg.Column3,
 		arg.Column4,
-		arg.Column5,
 	)
 	if err != nil {
 		return nil, err

@@ -1,7 +1,6 @@
 -- name: GetJobs :many
 SELECT job_id, job_role, ctc, salary_tier, apply_by_date, cgpa_cutoff, company_name, industry,
        (CASE WHEN 
-       (COALESCE(array_length($5::VARCHAR[], 1), 0) = 0 OR job_type <> ANY($5)) OR 
        cgpa_cutoff <= (SELECT cgpa FROM student_table WHERE student_id = $1) THEN TRUE 
        ELSE FALSE 
        END) AS can_apply
@@ -13,7 +12,6 @@ AND (COALESCE(array_length($4::VARCHAR[], 1), 0) = 0 OR company_name = ANY($4))
 AND NOW() < apply_by_date
 AND ARRAY(SELECT branch FROM student_table WHERE student_id = $1) && eligible_branches
 AND job_table.eligible_batch = (SELECT batch from student_table where student_id = $1);
--- AND cgpa_cutoff <= (SELECT cgpa from student_table where student_id = $1);
 
 -- name: CreateJob :exec
 INSERT INTO job_table(company_id, job_role, job_type, ctc, salary_tier, apply_by_date, cgpa_cutoff, eligible_batch, eligible_branches)
