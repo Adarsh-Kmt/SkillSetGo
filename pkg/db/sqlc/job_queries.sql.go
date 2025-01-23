@@ -12,7 +12,6 @@ import (
 )
 
 const createJob = `-- name: CreateJob :exec
-
 INSERT INTO job_table(company_id, job_role, job_type, ctc, salary_tier, apply_by_date, cgpa_cutoff, eligible_batch, eligible_branches)
 VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
 `
@@ -29,7 +28,6 @@ type CreateJobParams struct {
 	EligibleBranches []string         `json:"eligible_branches"`
 }
 
-// AND cgpa_cutoff <= (SELECT cgpa from student_table where student_id = $1);
 func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) error {
 	_, err := q.db.Exec(ctx, createJob,
 		arg.CompanyID,
@@ -45,6 +43,32 @@ func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) error {
 	return err
 }
 
+const getAlreadyAppliedJobs = `-- name: GetAlreadyAppliedJobs :many
+SELECT job_id
+FROM student_job_application_table
+WHERE student_id = $1
+`
+
+func (q *Queries) GetAlreadyAppliedJobs(ctx context.Context, studentID int32) ([]int32, error) {
+	rows, err := q.db.Query(ctx, getAlreadyAppliedJobs, studentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var job_id int32
+		if err := rows.Scan(&job_id); err != nil {
+			return nil, err
+		}
+		items = append(items, job_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getJobs = `-- name: GetJobs :many
 SELECT job_id, job_role, ctc, salary_tier, apply_by_date, cgpa_cutoff, company_name, industry,
        (CASE WHEN 
@@ -57,15 +81,17 @@ WHERE (COALESCE(array_length($2::VARCHAR[], 1), 0) = 0 OR salary_tier = ANY($2))
 AND (COALESCE(array_length($3::VARCHAR[], 1), 0) = 0 OR job_role = ANY($3))
 AND (COALESCE(array_length($4::VARCHAR[], 1), 0) = 0 OR company_name = ANY($4))
 AND NOW() < apply_by_date
+AND (COALESCE(array_length($5::INT[], 1), 0) = 0 OR job_id <> ANY($5))
 AND ARRAY(SELECT branch FROM student_table WHERE student_id = $1) && eligible_branches
 AND job_table.eligible_batch = (SELECT batch from student_table where student_id = $1)
 `
 
 type GetJobsParams struct {
-	Column1 *int32   `json:"column_1"`
-	Column2 []string `json:"column_2"`
-	Column3 []string `json:"column_3"`
-	Column4 []string `json:"column_4"`
+	Column1             *int32   `json:"column_1"`
+	Column2             []string `json:"column_2"`
+	Column3             []string `json:"column_3"`
+	Column4             []string `json:"column_4"`
+	AlreadyAppliedJobID []int32  `json:"already_applied_job_id"`
 }
 
 type GetJobsRow struct {
@@ -86,6 +112,7 @@ func (q *Queries) GetJobs(ctx context.Context, arg GetJobsParams) ([]*GetJobsRow
 		arg.Column2,
 		arg.Column3,
 		arg.Column4,
+		arg.AlreadyAppliedJobID,
 	)
 	if err != nil {
 		return nil, err

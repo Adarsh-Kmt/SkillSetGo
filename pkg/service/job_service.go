@@ -26,15 +26,20 @@ func NewJobServiceImpl() *JobServiceImpl {
 func (js *JobServiceImpl) GetJobs(studentId int, salaryTierFilter []string, jobRoleFilter []string, companyFilter []string) (jobs []*sqlc.GetJobsRow, httpError *util.HTTPError) {
 
 	var (
-		err error
+		err                     error
+		alreadyAppliedJobIdList []int32
 	)
 	studentIdParam := int32(studentId)
 
+	if alreadyAppliedJobIdList, err = db.Client.GetAlreadyAppliedJobs(context.TODO(), studentIdParam); err != nil {
+		return nil, &util.HTTPError{StatusCode: 500, Error: "internal server error"}
+	}
 	params := sqlc.GetJobsParams{
-		Column1: &studentIdParam,
-		Column2: salaryTierFilter,
-		Column3: jobRoleFilter,
-		Column4: companyFilter,
+		Column1:             &studentIdParam,
+		Column2:             salaryTierFilter,
+		Column3:             jobRoleFilter,
+		Column4:             companyFilter,
+		AlreadyAppliedJobID: alreadyAppliedJobIdList,
 	}
 
 	if jobs, err = db.Client.GetJobs(context.Background(), params); err != nil {

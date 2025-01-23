@@ -41,6 +41,36 @@ func (q *Queries) AuthenticateStudent(ctx context.Context, arg AuthenticateStude
 	return student_id, err
 }
 
+const checkIfCompanyExists = `-- name: CheckIfCompanyExists :one
+SELECT EXISTS(
+    SELECT company_id
+    FROM company_table
+    WHERE company_name = $1
+)
+`
+
+func (q *Queries) CheckIfCompanyExists(ctx context.Context, companyName string) (bool, error) {
+	row := q.db.QueryRow(ctx, checkIfCompanyExists, companyName)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const checkIfStudentExists = `-- name: CheckIfStudentExists :one
+SELECT EXISTS(
+    SELECT student_id
+    FROM student_table
+    WHERE usn = $1
+)
+`
+
+func (q *Queries) CheckIfStudentExists(ctx context.Context, usn string) (bool, error) {
+	row := q.db.QueryRow(ctx, checkIfStudentExists, usn)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const createCompany = `-- name: CreateCompany :exec
 INSERT INTO company_table (company_name, poc_name, poc_phno, industry, username, password)
 VALUES ($1, $2, $3, $4, $5, $6)
