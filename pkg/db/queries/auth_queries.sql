@@ -11,3 +11,17 @@ VALUES ($1, $2, $3, $4, $5, $6);
 -- name: InsertUser :exec
 INSERT INTO student_table(usn, name, password, branch, batch,cgpa, num_active_backlogs,email_id,counsellor_email_id)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+
+-- name: CheckIfStudentExists :one
+SELECT EXISTS(
+    SELECT student_id
+    FROM student_table
+    WHERE usn = $1
+);
+
+-- name: CheckIfCompanyExists :one
+SELECT EXISTS(
+    SELECT company_id
+    FROM company_table
+    WHERE company_name = $1
+);

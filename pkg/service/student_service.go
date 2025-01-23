@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 	"errors"
-	"github.com/adarsh-kmt/skillsetgo/pkg/response"
+	"log"
 	"time"
+
+	"github.com/adarsh-kmt/skillsetgo/pkg/response"
 
 	db "github.com/adarsh-kmt/skillsetgo/pkg/db/config"
 	"github.com/adarsh-kmt/skillsetgo/pkg/db/sqlc"
@@ -33,7 +35,10 @@ func (ss *StudentServiceImpl) ApplyForJob(studentId int, jobId int) (httpError *
 		JobID:     int32(jobId),
 	}
 
+	log.Println(params)
+
 	if err := db.Client.RegisterForJob(context.TODO(), params); err != nil {
+		log.Println(err.Error())
 		return &util.HTTPError{StatusCode: 500, Error: "internal server error"}
 	}
 

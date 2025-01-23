@@ -68,6 +68,13 @@ func (as *AuthServiceImpl) RegisterStudent(request *entity.RegisterStudentReques
 	var (
 		err error
 	)
+
+	if exists, err := db.Client.CheckIfStudentExists(context.TODO(), request.Usn); err != nil {
+
+		return &util.HTTPError{StatusCode: 500, Error: "internal server error"}
+	} else if exists {
+		return &util.HTTPError{StatusCode: 404, Error: "student already registered"}
+	}
 	params := sqlc.InsertUserParams{
 		Usn:               request.Usn,
 		Name:              request.Name,
@@ -92,6 +99,13 @@ func (as *AuthServiceImpl) RegisterCompany(request *entity.RegisterCompanyReques
 	var (
 		err error
 	)
+
+	if exists, err := db.Client.CheckIfCompanyExists(context.TODO(), request.CompanyName); err != nil {
+
+		return &util.HTTPError{StatusCode: 500, Error: "internal server error"}
+	} else if exists {
+		return &util.HTTPError{StatusCode: 404, Error: "company already registered"}
+	}
 	params := sqlc.CreateCompanyParams{
 		CompanyName: request.CompanyName,
 		PocName:     request.PocName,

@@ -2,9 +2,10 @@ package handler
 
 import (
 	"encoding/json"
-	"github.com/adarsh-kmt/skillsetgo/pkg/response"
 	"net/http"
 	"strconv"
+
+	"github.com/adarsh-kmt/skillsetgo/pkg/response"
 
 	"github.com/adarsh-kmt/skillsetgo/pkg/entity"
 	"github.com/adarsh-kmt/skillsetgo/pkg/service"
@@ -58,6 +59,10 @@ func (sh *StudentHandler) ApplyForJob(w http.ResponseWriter, r *http.Request) (h
 		jobId     int
 		err       error
 	)
+
+	if studentId, httpError = util.ValidateAccessToken(r.Header.Get("Auth")); httpError != nil {
+		return httpError
+	}
 	vars := mux.Vars(r)
 
 	jobIdString := vars["job-id"]
