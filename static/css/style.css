@@ -1,0 +1,48 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.navbar {
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,.05);
+    margin-bottom: 1.5rem;
+    border: none;
+    border-radius: 8px;
+}
+
+.card-title {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.btn-primary {
+    background-color: #3498db;
+    border-color: #3498db;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+    border-color: #2980b9;
+}
+
+.progress {
+    height: 1.5rem;
+    border-radius: 8px;
+}
+
+.progress-bar {
+    background-color: #3498db;
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+.lead {
+    color: #7f8c8d;
+}
