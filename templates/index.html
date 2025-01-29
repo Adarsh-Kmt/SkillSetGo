@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}SkillSetGo - Home{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 text-center mb-4">
+        <h1>Welcome to SkillSetGo</h1>
+        <p class="lead">Your one-stop platform for placement preparation</p>
+    </div>
+</div>
+
+{% if session.get('access_token') %}
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Available Jobs</h5>
+                    <p class="card-text">View and apply for job opportunities that match your profile.</p>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">View Jobs</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Your Applications</h5>
+                    <p class="card-text">Track your job applications and their status.</p>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">View Applications</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Profile</h5>
+                    <p class="card-text">Update your profile and preferences.</p>
+                    <a href="#" class="btn btn-primary">Edit Profile</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="row">
+        <div class="col-md-6 offset-md-3 text-center">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title">Get Started</h3>
+                    <p class="card-text">Join SkillSetGo to access job opportunities and start your career journey.</p>
+                    <div class="d-grid gap-3">
+                        <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">Login</a>
+                        <a href="{{ url_for('register') }}" class="btn btn-outline-primary btn-lg">Register</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

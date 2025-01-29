@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}SkillSetGo - Company Registration{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title text-center mb-4">Company Registration</h3>
+                {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+                <form method="POST" action="{{ url_for('company_register') }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="company_name" class="form-label">Company Name</label>
+                            <input type="text" class="form-control" id="company_name" name="company_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="industry" class="form-label">Industry</label>
+                            <input type="text" class="form-control" id="industry" name="industry" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="poc_name" class="form-label">Point of Contact Name</label>
+                            <input type="text" class="form-control" id="poc_name" name="poc_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="poc_phno" class="form-label">Point of Contact Phone</label>
+                            <input type="tel" class="form-control" id="poc_phno" name="poc_phno" required pattern="[0-9]{10}" title="Please enter a valid 10-digit phone number">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                            <div class="form-text">This will be used for login</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Register Company</button>
+                    </div>
+                </form>
+                <div class="text-center mt-3">
+                    <p>Already registered? <a href="{{ url_for('company_login') }}">Login here</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

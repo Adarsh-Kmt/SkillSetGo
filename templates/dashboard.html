@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}SkillSetGo - Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Your Dashboard</h2>
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">Logout</a>
+        </div>
+    </div>
+</div>
+
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+<!-- Job Offers Section -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Your Job Offers</h5>
+                {% if offers %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Company</th>
+                                    <th>Role</th>
+                                    <th>Salary Tier</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for offer in offers %}
+                                <tr>
+                                    <td>{{ offer.company_name }}</td>
+                                    <td>{{ offer.job_role }}</td>
+                                    <td><span class="badge bg-primary">{{ offer.salary_tier }}</span></td>
+                                    <td>
+                                        <span class="badge {% if offer.status == 'Pending' %}bg-warning{% elif offer.status == 'Accepted' %}bg-success{% elif offer.status == 'Rejected' %}bg-danger{% endif %}">
+                                            {{ offer.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if offer.status == 'Pending' %}
+                                            <button class="btn btn-sm btn-success me-2" onclick="handleOfferAction({{ offer.id }}, 'accept')">Accept</button>
+                                            <button class="btn btn-sm btn-danger" onclick="handleOfferAction({{ offer.id }}, 'reject')">Reject</button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No job offers available at the moment.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Available Jobs Section -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Available Jobs</h5>
+                
+                <!-- Job Filters -->
+                <div class="mb-4">
+                    <form id="filterForm" class="row g-3">
+                        <div class="col-md-4">
+                            <select class="form-select" name="salary-tier">
+                                <option value="">All Salary Tiers</option>
+                                <option value="Dream">Dream</option>
+                                <option value="Open Dream">Open Dream</option>
+                                <option value="Mass Recruitment">Mass Recruitment</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" name="job-role" placeholder="Filter by Role">
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" name="company" placeholder="Filter by Company">
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Jobs List -->
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Company</th>
+                                <th>Role</th>
+                                <th>Salary Tier</th>
+                                <th>Description</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if jobs %}
+                                {% for job in jobs %}
+                                <tr>
+                                    <td>{{ job.company_name }}</td>
+                                    <td>{{ job.job_role }}</td>
+                                    <td><span class="badge bg-primary">{{ job.salary_tier }}</span></td>
+                                    <td>{{ job.description }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-success apply-btn" 
+                                                data-job-id="{{ job.id }}"
+                                                onclick="applyForJob({{ job.id }})">
+                                            Apply
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No jobs available at the moment.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle filter form changes
+    const filterForm = document.getElementById('filterForm');
+    const filterInputs = filterForm.querySelectorAll('input, select');
+    
+    filterInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            const formData = new FormData(filterForm);
+            const queryParams = new URLSearchParams();
+            
+            formData.forEach((value, key) => {
+                if (value) {
+                    queryParams.append(key, value);
+                }
+            });
+            
+            window.location.href = `{{ url_for('dashboard') }}?${queryParams.toString()}`;
+        });
+    });
+});
+
+function applyForJob(jobId) {
+    fetch(`/apply/${jobId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Successfully applied for the job!');
+            const applyBtn = document.querySelector(`button[data-job-id="${jobId}"]`);
+            applyBtn.disabled = true;
+            applyBtn.textContent = 'Applied';
+            window.location.reload(); // Refresh to show updated offers
+        } else {
+            alert('Failed to apply for the job. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while applying for the job.');
+    });
+}
+
+function handleOfferAction(offerId, action) {
+    fetch('/offer/action', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            offer_id: offerId,
+            action: action
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Successfully ${action}ed the job offer!`);
+            window.location.reload();
+        } else {
+            alert('Failed to process the job offer. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while processing the job offer.');
+    });
+}
+</script>
+{% endblock %}

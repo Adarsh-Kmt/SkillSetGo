@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}SkillSetGo - Register{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title text-center mb-4">Student Registration</h3>
+                {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+                <form method="POST" action="{{ url_for('register') }}" id="registrationForm" onsubmit="return validateForm()">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="usn" class="form-label">USN (must start with 1RV)</label>
+                        <input type="text" class="form-control" id="usn" name="usn" pattern="1RV.*" required>
+                        <div class="form-text">USN must start with 1RV</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="branch" class="form-label">Branch</label>
+                        <select class="form-select" id="branch" name="branch" required>
+                            <option value="">Select Branch</option>
+                            <option value="ISE">ISE</option>
+                            <option value="CSE">CSE</option>
+                            <option value="CD">CD</option>
+                            <option value="CY">CY</option>
+                            <option value="AIML">AIML</option>
+                            <option value="ECE">ECE</option>
+                            <option value="EEE">EEE</option>
+                            <option value="ETE">ETE</option>
+                            <option value="EIE">EIE</option>
+                            <option value="ME">ME</option>
+                            <option value="CV">CV</option>
+                            <option value="BT">BT</option>
+                            <option value="CH">CH</option>
+                            <option value="IEM">IEM</option>
+                            <option value="ASE">ASE</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cgpa" class="form-label">CGPA</label>
+                        <input type="number" class="form-control" id="cgpa" name="cgpa" step="0.01" min="0" max="10" required>
+                        <div class="form-text">Enter CGPA between 0 and 10</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email (@rvce.edu.in)</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                        <div class="form-text">Email must match your branch (e.g., name.is@rvce.edu.in for ISE)</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="batch" class="form-label">Batch</label>
+                        <input type="number" class="form-control" id="batch" name="batch" min="2026" max="2030" required>
+                        <div class="form-text">Enter batch year (2026 or later)</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="counsellor_email_id" class="form-label">Counsellor Email ID</label>
+                        <input type="email" class="form-control" id="counsellor_email_id" name="counsellor_email_id" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="num_of_backlogs" class="form-label">Number of Backlogs</label>
+                        <input type="number" class="form-control" id="num_of_backlogs" name="num_of_backlogs" min="0" value="0" required>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Register</button>
+                    </div>
+                </form>
+                <div class="text-center mt-3">
+                    <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+const branchCodes = {
+    'ISE': '.is',
+    'CSE': '.cs',
+    'CD': '.cd',
+    'CY': '.cy',
+    'AIML': '.ai',
+    'ECE': '.ec',
+    'EEE': '.ee',
+    'ETE': '.et',
+    'EIE': '.ei',
+    'ME': '.me',
+    'CV': '.cv',
+    'BT': '.bt',
+    'CH': '.ch',
+    'IEM': '.iem',
+    'ASE': '.ae'
+};
+
+function validateForm() {
+    const form = document.getElementById('registrationForm');
+    const usn = document.getElementById('usn').value;
+    const email = document.getElementById('email').value.toLowerCase();
+    const branch = document.getElementById('branch').value;
+    const cgpa = parseFloat(document.getElementById('cgpa').value);
+    const batch = parseInt(document.getElementById('batch').value);
+    
+    // Validate USN
+    if (!usn.startsWith('1RV')) {
+        alert('USN must start with 1RV');
+        return false;
+    }
+    
+    // Validate email format
+    if (!email.endsWith('@rvce.edu.in')) {
+        alert('Email must end with @rvce.edu.in');
+        return false;
+    }
+    
+    // Validate email matches branch
+    const branchCode = branchCodes[branch];
+    if (!email.includes(branchCode)) {
+        alert(`Email must contain "${branchCode}" for ${branch} branch`);
+        return false;
+    }
+    
+    // Validate CGPA
+    if (isNaN(cgpa) || cgpa < 0 || cgpa > 10) {
+        alert('CGPA must be between 0 and 10');
+        return false;
+    }
+    
+    // Validate batch
+    if (isNaN(batch) || batch < 2026) {
+        alert('Batch must be 2026 or later');
+        return false;
+    }
+    
+    return true;
+}
+
+// Add event listeners for real-time validation
+document.getElementById('branch').addEventListener('change', function() {
+    const emailInput = document.getElementById('email');
+    const email = emailInput.value.toLowerCase();
+    const selectedBranch = this.value;
+    const branchCode = branchCodes[selectedBranch];
+    
+    if (email && selectedBranch) {
+        if (!email.includes(branchCode)) {
+            emailInput.setCustomValidity(`Email must contain "${branchCode}" for ${selectedBranch} branch`);
+        } else if (!email.endsWith('@rvce.edu.in')) {
+            emailInput.setCustomValidity('Email must end with @rvce.edu.in');
+        } else {
+            emailInput.setCustomValidity('');
+        }
+    }
+});
+
+document.getElementById('email').addEventListener('input', function() {
+    const email = this.value.toLowerCase();
+    const selectedBranch = document.getElementById('branch').value;
+    const branchCode = branchCodes[selectedBranch];
+    
+    if (selectedBranch && !email.includes(branchCode)) {
+        this.setCustomValidity(`Email must contain "${branchCode}" for ${selectedBranch} branch`);
+    } else if (!email.endsWith('@rvce.edu.in')) {
+        this.setCustomValidity('Email must end with @rvce.edu.in');
+    } else {
+        this.setCustomValidity('');
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}
