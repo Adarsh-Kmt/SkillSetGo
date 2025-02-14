@@ -1,8 +1,10 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
 from dotenv import load_dotenv
 import os
 import requests
 from datetime import datetime
+import base64
+import json
 
 load_dotenv()
 
@@ -12,13 +14,38 @@ app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'dev-key-123')
 # Go backend API URL
 API_URL = 'http://localhost:8080'  # Adjust this to your Go server port
 
-def get_auth_header(token=None):
-    """Get the authorization header with the correct token format"""
-    if not token:
-        token = session.get('access_token') or session.get('company_access_token')
+def get_user_id_from_token(token):
+    """Extract user_id from JWT token"""
+    try:
+        # Split the token into parts
+        parts = token.split('.')
+        if len(parts) != 3:
+            return None
+        
+        # Decode the payload (middle part)
+        payload = parts[1]
+        payload += '=' * ((4 - len(payload) % 4) % 4)
+        
+        # Decode the payload
+        decoded = base64.b64decode(payload)
+        payload_data = json.loads(decoded)
+        
+        # Extract user_id from claims
+        return payload_data.get('sub')  # JWT typically uses 'sub' for subject/user_id
+    except Exception as e:
+        print(f"Error extracting user_id from token: {str(e)}")
+        return None
+
+def get_auth_header():
+    """Get authorization header with token"""
+    token = None
+    if 'company_access_token' in session:
+        token = session['company_access_token']
+    elif 'access_token' in session:
+        token = session['access_token']
+    
     if not token:
         return None
-    # Don't modify the token, send it exactly as received from the API
     return {'Auth': token}
 
 @app.route('/')
@@ -27,32 +54,107 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        data = {
-            'usn': request.form.get('usn'),
-            'password': request.form.get('password')
-        }
-        try:
-            print(f"Sending login data to API: {data}")  # Debug print
-            response = requests.post(f"{API_URL}/student/login", json=data)
-            print(f"API Response: {response.status_code} - {response.text}")  # Debug print
-            
-            if response.status_code == 200:
-                response_data = response.json()
-                token = response_data.get('access_token')
-                if not token:
-                    return render_template('login.html', error="Invalid response from server")
+    try:
+        print("\n=== Login Route ===")
+        print(f"Request Method: {request.method}")
+        print(f"Form Data: {request.form}")
+        print(f"Headers: {dict(request.headers)}")
+        print(f"Current Session: {session}")
+        
+        if request.method == 'POST':
+            try:
+                # Get form data
+                usn = request.form.get('usn', '').strip().upper()  # Convert to uppercase
+                password = request.form.get('password', '').strip()
                 
-                # Store the token exactly as received
-                session['access_token'] = token
-                print(f"Stored token in session: {token}")  # Debug print
-                return redirect(url_for('dashboard'))
-            else:
-                error_msg = response.json().get('error', 'Invalid credentials')
-                return render_template('login.html', error=error_msg)
-        except requests.exceptions.RequestException as e:
-            print(f"Login error: {str(e)}")  # Debug print
-            return render_template('login.html', error="Server error")
+                print(f"USN: {usn}")
+                print(f"Password length: {len(password) if password else 0}")
+                
+                if not usn or not password:
+                    flash('Please enter both USN and password', 'error')
+                    return render_template('login.html')
+                
+                # Prepare login data
+                login_data = {
+                    'usn': usn,
+                    'password': password
+                }
+                
+                # Make login request
+                print(f"Making request to {API_URL}/student/login")
+                print(f"Request data: {login_data}")
+                
+                try:
+                    print("Sending request...")
+                    response = requests.post(
+                        f"{API_URL}/student/login",
+                        json=login_data,
+                        headers={'Content-Type': 'application/json'},
+                        timeout=10
+                    )
+                    print("Request sent successfully")
+                    print(f"Response status: {response.status_code}")
+                    print(f"Response headers: {dict(response.headers)}")
+                    print(f"Response body: {response.text}")
+                    
+                    if response.status_code == 200:
+                        try:
+                            response_data = response.json()
+                            print(f"Response data: {response_data}")
+                            token = response_data.get('access_token')
+                            
+                            if not token:
+                                print("No access_token in response")
+                                flash('Invalid server response', 'error')
+                                return render_template('login.html')
+                            
+                            # Store token in session
+                            session.clear()
+                            session['access_token'] = token
+                            session['user_type'] = 'student'
+                            
+                            print(f"Token stored in session: {token[:10]}...")
+                            print(f"Updated session: {session}")
+                            
+                            return redirect(url_for('dashboard'))
+                        except json.JSONDecodeError as e:
+                            print(f"Failed to parse response JSON: {str(e)}")
+                            print(f"Raw response text: {response.text}")
+                            flash('Invalid server response format', 'error')
+                            return render_template('login.html')
+                    else:
+                        error_message = "Invalid credentials"
+                        try:
+                            error_data = response.json()
+                            if isinstance(error_data, dict) and 'error' in error_data:
+                                error_message = error_data['error']
+                        except Exception as e:
+                            print(f"Error parsing error response: {str(e)}")
+                            print(f"Raw error response: {response.text}")
+                        
+                        print(f"Login failed: {error_message}")
+                        flash(error_message, 'error')
+                        return render_template('login.html')
+                except requests.RequestException as e:
+                    print(f"Request failed: {str(e)}")
+                    print(f"Request exception type: {type(e)}")
+                    flash('Failed to connect to server', 'error')
+                    return render_template('login.html')
+            except Exception as e:
+                print(f"Error in POST handling: {str(e)}")
+                print(f"Exception type: {type(e)}")
+                import traceback
+                print(f"Traceback: {traceback.format_exc()}")
+                flash('Error processing login request', 'error')
+                return render_template('login.html')
+    except Exception as e:
+        import traceback
+        print(f"Exception in login route: {str(e)}")
+        print(f"Exception type: {type(e)}")
+        print(f"Traceback: {traceback.format_exc()}")
+        flash('An unexpected error occurred', 'error')
+        return render_template('login.html')
+    
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -172,213 +274,200 @@ def register():
 
 @app.route('/dashboard')
 def dashboard():
-    if 'access_token' not in session:
-        return redirect(url_for('login'))
-    
     try:
+        print("\n=== Dashboard Route ===")
+        print(f"Current Session: {session}")
+        
+        # Check if user is logged in
+        if 'access_token' not in session:
+            print("No access_token in session")
+            flash('Please log in first', 'error')
+            return redirect(url_for('login'))
+        
+        # Get auth header
         headers = get_auth_header()
+        print(f"Auth Headers: {headers}")
+        
         if not headers:
+            print("No auth headers")
+            session.clear()
+            flash('Session expired, please log in again', 'error')
             return redirect(url_for('login'))
+        
+        # Extract user ID from token
+        try:
+            token = session['access_token']
+            payload = token.split('.')[1]
+            # Add padding
+            payload += '=' * ((4 - len(payload) % 4) % 4)
+            decoded = base64.b64decode(payload)
+            payload_data = json.loads(decoded)
+            user_id = payload_data.get('id')
             
-        print(f"Using headers for API calls: {headers}")  # Debug print
+            if not user_id:
+                print("No user ID in token")
+                session.clear()
+                flash('Invalid session', 'error')
+                return redirect(url_for('login'))
+                
+            print(f"User ID from token: {user_id}")
+        except Exception as e:
+            print(f"Error decoding token: {str(e)}")
+            session.clear()
+            flash('Invalid session', 'error')
+            return redirect(url_for('login'))
         
-        # Get job offers and applications first to track applied jobs
-        offers_response = requests.get(f"{API_URL}/student/offer", headers=headers)
-        print(f"Offers API Response Status: {offers_response.status_code}")  # Debug print
-        print(f"Raw Offers Response: {offers_response.text}")  # Debug print
+        # Get student profile
+        profile_url = f"{API_URL}/student/{user_id}/profile"
+        print(f"Fetching profile from: {profile_url}")
+        print(f"Using headers: {headers}")
         
-        offers = []
-        applied_job_ids = set()  # Track applied job IDs
-        applied_jobs = []
-        if offers_response.status_code == 200:
-            try:
-                offers_data = offers_response.json()
-                print(f"Parsed offers_data: {offers_data}")  # Debug print
-                
-                # Get offers from the response
-                if isinstance(offers_data, dict):
-                    offers = offers_data.get('offers', [])
-                elif isinstance(offers_data, list):
-                    offers = offers_data
-                else:
-                    offers = []
-                
-                print(f"Extracted offers: {offers}")  # Debug print
-                
-                # Create a list of applied jobs and track job IDs
-                for offer in offers:
-                    print(f"Processing offer: {offer}")  # Debug print
-                    job_id = offer.get('job_id')
-                    print(f"Found job_id: {job_id}")  # Debug print
+        profile_response = requests.get(profile_url, headers=headers)
+        print(f"Profile Response Status: {profile_response.status_code}")
+        print(f"Profile Response Body: {profile_response.text}")
+        
+        if profile_response.status_code == 401:
+            print("Unauthorized access to profile")
+            session.clear()
+            flash('Session expired, please log in again', 'error')
+            return redirect(url_for('login'))
+        
+        if profile_response.status_code != 200:
+            print(f"Error fetching profile: {profile_response.status_code}")
+            flash('Error loading profile', 'error')
+            return render_template('dashboard.html', error="Failed to load profile")
+        
+        try:
+            response_data = profile_response.json()
+            profile_data = response_data.get('profile', {})
+            print(f"Profile data: {profile_data}")
+            
+            # Map backend field names to frontend field names
+            profile_data['email'] = profile_data.get('email_id')
+            profile_data['num_of_backlogs'] = profile_data.get('num_active_backlogs')
+            profile_data['graduation_year'] = profile_data.get('batch')
+            
+            # Ensure all required fields are present
+            required_fields = ['name', 'usn', 'email', 'cgpa', 'branch', 'batch', 'num_of_backlogs', 'counsellor_email_id']
+            for field in required_fields:
+                if not profile_data.get(field):
+                    print(f"Missing or empty field: {field}")
+                    profile_data[field] = "Not available"
                     
-                    if job_id:
-                        applied_job_ids.add(job_id)  # Add to set for quick lookup
+        except json.JSONDecodeError as e:
+            print(f"Error decoding profile response: {str(e)}")
+            flash('Error loading profile', 'error')
+            return render_template('dashboard.html', error="Failed to parse profile data")
+        
+        # Get jobs data
+        print("Fetching jobs data...")
+        jobs_response = requests.get(f"{API_URL}/student/job", headers=headers)
+        print(f"Jobs Response Status: {jobs_response.status_code}")
+        print(f"Jobs Response Body: {jobs_response.text}")
+        
+        jobs_data = []
+        if jobs_response.status_code == 200:
+            try:
+                response_json = jobs_response.json()
+                print(f"Jobs response JSON: {response_json}")
+                jobs_data = response_json.get('jobs', [])
+                if not jobs_data and isinstance(response_json, list):
+                    jobs_data = response_json  # Handle case where response is direct array
+                print(f"Jobs data: {jobs_data}")
+                
+                # Get applied jobs to mark which jobs the user has applied to
+                applied_response = requests.get(f"{API_URL}/student/job/apply", headers=headers)
+                print(f"Applied jobs response: {applied_response.status_code} - {applied_response.text}")
+                
+                if applied_response.status_code == 200:
+                    try:
+                        applied_json = applied_response.json()
+                        applied_data = applied_json.get('jobs', []) or []  # Use empty list if null
+                        if not applied_data and isinstance(applied_json, list):
+                            applied_data = applied_json  # Handle case where response is direct array
+                        applied_job_ids = {job.get('job_id') for job in applied_data if job and job.get('job_id')}
+                        print(f"Applied job IDs: {applied_job_ids}")
                         
-                    # Convert action_date to a formatted string if it exists
-                    action_date = offer.get('action_date')
-                    if action_date:
-                        try:
-                            # Try to parse the date if it's a datetime string
-                            date_obj = datetime.strptime(action_date, '%Y-%m-%dT%H:%M:%SZ')
-                            action_date = date_obj.strftime('%Y-%m-%d')
-                        except (ValueError, TypeError):
+                        # Mark jobs as applied or not
+                        for job in jobs_data:
+                            job_id = job.get('job_id')
+                            job['has_applied'] = job_id in applied_job_ids
+                            
+                            # Check if user meets CGPA requirement
                             try:
-                                # Try another common format
-                                date_obj = datetime.strptime(action_date, '%Y-%m-%d %H:%M:%S')
-                                action_date = date_obj.strftime('%Y-%m-%d')
-                            except (ValueError, TypeError):
-                                # If parsing fails, use the original string
-                                pass
-                    
-                    # Get the status based on the action field
-                    action = offer.get('action', '').upper()
-                    if not action:
-                        status = 'PENDING'
-                    else:
-                        status = action
-                    
-                    applied_job = {
-                        'job_id': job_id,
-                        'job_role': offer.get('job_role'),
-                        'company_name': offer.get('company_name'),
-                        'salary_tier': offer.get('salary_tier'),
-                        'status': status,
-                        'applied_date': action_date or 'Not Available',
-                        'ctc': offer.get('ctc')
-                    }
-                    print(f"Created applied_job: {applied_job}")  # Debug print
-                    applied_jobs.append(applied_job)
+                                user_cgpa = float(profile_data.get('cgpa', 0))
+                                job_cgpa = float(job.get('cgpa_cutoff', 0))
+                                job['can_apply'] = (
+                                    not job['has_applied'] and 
+                                    user_cgpa >= job_cgpa
+                                )
+                            except (ValueError, TypeError) as e:
+                                print(f"Error comparing CGPA for job {job_id}: {str(e)}")
+                                job['can_apply'] = not job['has_applied']  # Default to allowing apply if CGPA comparison fails
+                    except json.JSONDecodeError as e:
+                        print(f"Error decoding applied jobs response: {str(e)}")
                 
-                print(f"Final applied_job_ids: {applied_job_ids}")  # Debug print
-                print(f"Final applied_jobs: {applied_jobs}")  # Debug print
-            except Exception as e:
-                print(f"Error parsing offers: {str(e)}")  # Debug print
-                print(f"Error type: {type(e)}")  # Debug print
-                print(f"Error args: {e.args}")  # Debug print
-                offers = []
-                applied_jobs = []
-        elif offers_response.status_code == 401:  # Unauthorized
-            print("Unauthorized response, clearing session")  # Debug print
+            except json.JSONDecodeError as e:
+                print(f"Error decoding jobs response: {str(e)}")
+                flash('Error loading jobs', 'error')
+        elif jobs_response.status_code == 401:
             session.clear()
-            return redirect(url_for('login'))
-            
-        # Get all jobs
-        response = requests.get(f"{API_URL}/job", headers=headers)
-        print(f"Jobs API Response Status: {response.status_code}")  # Debug print
-        print(f"Raw Jobs Response: {response.text}")  # Debug print
-        
-        jobs = []
-        if response.status_code == 200:
-            try:
-                response_data = response.json()
-                jobs_data = response_data.get('jobs', [])
-                print(f"Number of jobs found: {len(jobs_data)}")  # Debug print
-                
-                # Process each job to ensure all required fields are present
-                processed_jobs = []
-                for job in jobs_data:
-                    print(f"Processing job: {job}")  # Debug print
-                    job_id = job.get('job_id')
-                    print(f"Checking job_id {job_id} against applied_job_ids {applied_job_ids}")  # Debug print
-                    
-                    # Check if this job has been applied to
-                    has_applied = job_id in applied_job_ids
-                    print(f"Job {job_id} has_applied: {has_applied}")  # Debug print
-                    
-                    # Convert apply_by_date to a formatted string if it exists
-                    apply_by_date = job.get('apply_by_date')
-                    if apply_by_date:
-                        try:
-                            # Try to parse the date if it's a datetime string
-                            date_obj = datetime.strptime(apply_by_date, '%Y-%m-%dT%H:%M:%SZ')
-                            apply_by_date = date_obj.strftime('%Y-%m-%d')
-                        except (ValueError, TypeError):
-                            try:
-                                # Try another common format
-                                date_obj = datetime.strptime(apply_by_date, '%Y-%m-%d %H:%M:%S')
-                                apply_by_date = date_obj.strftime('%Y-%m-%d')
-                            except (ValueError, TypeError):
-                                # If parsing fails, use the original string
-                                pass
-                    
-                    processed_job = {
-                        'job_id': job_id,
-                        'job_role': job.get('job_role'),
-                        'company_name': job.get('company_name'),
-                        'industry': job.get('industry'),
-                        'salary_tier': job.get('salary_tier'),
-                        'ctc': job.get('ctc'),
-                        'cgpa_cutoff': job.get('cgpa_cutoff'),
-                        'apply_by_date': apply_by_date,
-                        'can_apply': job.get('can_apply', True),  # Default to True if not specified
-                        'has_applied': has_applied  # Set based on our tracking
-                    }
-                    
-                    print(f"Created processed_job: {processed_job}")  # Debug print
-                    
-                    # If already applied, set can_apply to False
-                    if has_applied:
-                        processed_job['can_apply'] = False
-                    
-                    # Only add jobs that have required fields
-                    if processed_job['job_id'] is not None and processed_job['job_role'] and processed_job['company_name']:
-                        processed_jobs.append(processed_job)
-                
-                jobs = processed_jobs
-                print(f"Final processed jobs: {jobs}")  # Debug print
-            except Exception as e:
-                print(f"Error parsing jobs: {str(e)}")  # Debug print
-                print(f"Error type: {type(e)}")  # Debug print
-                print(f"Error args: {e.args}")  # Debug print
-                jobs = []
-        elif response.status_code == 401:  # Unauthorized
-            print("Unauthorized response, clearing session")  # Debug print
-            session.clear()
+            flash('Session expired, please log in again', 'error')
             return redirect(url_for('login'))
         else:
-            print(f"Error fetching jobs: {response.status_code} - {response.text}")  # Debug print
+            flash('Error loading jobs', 'error')
         
-        print(f"Final data being sent to template:")  # Debug print
-        print(f"Jobs: {jobs}")  # Debug print
-        print(f"Offers: {offers}")  # Debug print
-        print(f"Applied Jobs: {applied_jobs}")  # Debug print
-        
-        return render_template('dashboard.html', jobs=jobs, offers=offers, applied_jobs=applied_jobs)
-    except requests.exceptions.RequestException as e:
-        print(f"Dashboard error: {str(e)}")  # Debug print
-        return render_template('dashboard.html', error="Failed to fetch data", jobs=[], offers=[], applied_jobs=[])
+        return render_template('dashboard.html', 
+                             profile=profile_data,
+                             jobs=jobs_data)
+                             
+    except Exception as e:
+        import traceback
+        print(f"Exception in dashboard route: {str(e)}")
+        print(f"Traceback: {traceback.format_exc()}")
+        flash('An unexpected error occurred', 'error')
+        return redirect(url_for('login'))
 
 @app.route('/apply/<int:job_id>', methods=['POST'])
 def apply_job(job_id):
-    if 'access_token' not in session:
-        return jsonify({'success': False, 'error': 'Not authenticated'}), 401
-    
-    headers = get_auth_header()
     try:
-        # First check if already applied by checking offers
-        offers_response = requests.get(f"{API_URL}/student/offer", headers=headers)
-        if offers_response.status_code == 200:
-            offers_data = offers_response.json()
-            offers = offers_data.get('offers', [])
-            
-            # Check if already applied to this job
-            for offer in offers:
-                if offer.get('job_id') == job_id:
-                    return jsonify({'success': False, 'error': 'You have already applied to this job'}), 400
+        if 'access_token' not in session:
+            flash('Please log in first', 'error')
+            return redirect(url_for('login'))
         
-        # If not already applied, proceed with application
-        print(f"Sending application request for job {job_id}")  # Debug print
-        response = requests.post(f"{API_URL}/student/apply/{job_id}", headers=headers)
-        print(f"Application Response: {response.status_code} - {response.text}")  # Debug print
+        headers = get_auth_header()
+        if not headers:
+            session.clear()
+            flash('Session expired, please log in again', 'error')
+            return redirect(url_for('login'))
+        
+        # Make request to apply for job
+        response = requests.post(
+            f"{API_URL}/student/job/{job_id}/apply",
+            headers=headers
+        )
         
         if response.status_code == 200:
-            return jsonify({'success': True, 'message': 'Successfully applied to job'})
+            flash('Successfully applied for job!', 'success')
+        elif response.status_code == 401:
+            session.clear()
+            flash('Session expired, please log in again', 'error')
+            return redirect(url_for('login'))
         else:
-            error_msg = response.json().get('error', 'Failed to apply for job')
-            return jsonify({'success': False, 'error': error_msg}), response.status_code
-    except requests.exceptions.RequestException as e:
-        print(f"Application error: {str(e)}")  # Debug print
-        return jsonify({'success': False, 'error': 'Failed to apply for job'}), 500
+            error_message = "Failed to apply for job"
+            try:
+                error_data = response.json()
+                if isinstance(error_data, dict) and 'error' in error_data:
+                    error_message = error_data['error']
+            except:
+                pass
+            flash(error_message, 'error')
+            
+        return redirect(url_for('dashboard'))
+    except Exception as e:
+        print(f"Error applying for job: {str(e)}")
+        flash('An error occurred while applying for the job', 'error')
+        return redirect(url_for('dashboard'))
 
 @app.route('/offer/action', methods=['POST'])
 def offer_action():
@@ -388,7 +477,7 @@ def offer_action():
     data = request.json
     headers = get_auth_header()
     try:
-        response = requests.put(f"{API_URL}/student/offer", headers=headers, json=data)
+        response = requests.put(f"{API_URL}/student/job/offer", headers=headers, json=data)
         return jsonify({'success': response.status_code == 200}), response.status_code
     except requests.exceptions.RequestException:
         return jsonify({'success': False, 'error': 'Server error'}), 500
@@ -398,26 +487,29 @@ def company_login():
     if request.method == 'POST':
         try:
             data = {
-                'username': request.form.get('username'),
-                'password': request.form.get('password')
+                'username': request.form['username'],
+                'password': request.form['password']
             }
-            print(f"Sending company login data to API: {data}")  # Debug print
+            print("Sending company login data to API:", data)
             
             response = requests.post(f"{API_URL}/company/login", json=data)
-            print(f"API Response: {response.status_code} - {response.text}")  # Debug print
+            print(f"API Response: {response.status_code} - {response.text}")
             
             if response.status_code == 200:
                 token = response.json().get('access_token')
-                if not token:
-                    return render_template('company_login.html', error="Invalid response from server")
-                session['company_access_token'] = token
-                return redirect(url_for('company_dashboard'))
+                if token:
+                    session['company_access_token'] = token
+                    session['user_type'] = 'company'
+                    return redirect(url_for('company_dashboard'))
+                else:
+                    flash('Invalid response from server', 'error')
             else:
-                error_msg = response.json().get('error', 'Invalid credentials')
-                return render_template('company_login.html', error=error_msg)
-        except requests.exceptions.RequestException as e:
-            print(f"Company login error: {str(e)}")  # Debug print
-            return render_template('company_login.html', error="Server error")
+                flash('Invalid credentials', 'error')
+                
+        except Exception as e:
+            print(f"Error during company login: {str(e)}")
+            flash('An error occurred during login', 'error')
+            
     return render_template('company_login.html')
 
 @app.route('/company/register', methods=['GET', 'POST'])
@@ -449,30 +541,170 @@ def company_register():
 
 @app.route('/company/dashboard')
 def company_dashboard():
-    if 'company_access_token' not in session:
-        return redirect(url_for('company_login'))
+    print("\n=== Company Dashboard Route ===")
+    print("Current Session:", session)
     
+    if 'company_access_token' not in session:
+        print("No company_access_token in session")
+        flash('Please log in first', 'error')
+        return redirect(url_for('company_login'))
+        
+    headers = get_auth_header()
+    print("Auth Headers:", headers)
+    
+    if not headers:
+        flash('Session expired', 'error')
+        return redirect(url_for('company_login'))
+        
+    # Get company jobs
+    response = requests.get(f"{API_URL}/company/job", headers=headers)
+    print(f"Jobs Response Status: {response.status_code}")
+    print(f"Jobs Response Body: {response.text}")
+    
+    if response.status_code == 401:
+        session.clear()
+        flash('Session expired, please log in again', 'error')
+        return redirect(url_for('company_login'))
+        
+    if response.status_code != 200:
+        print("Unauthorized access")
+        flash('Failed to load jobs', 'error')
+        return redirect(url_for('company_login'))
+        
     try:
-        # Get company's jobs from the Go backend
+        jobs_data = response.json()
+        # Get company name from profile
+        profile_response = requests.get(f"{API_URL}/company/profile", headers=headers)
+        company_name = "Company"  # Default name
+        
+        if profile_response.status_code == 200:
+            company_name = profile_response.json().get('name', 'Company')
+            
+        return render_template('company_dashboard.html', company_name=company_name)
+        
+    except Exception as e:
+        print(f"Error rendering dashboard: {str(e)}")
+        flash('An error occurred', 'error')
+        return redirect(url_for('company_login'))
+
+@app.route('/student/<string:usn>/profile')
+def get_student_profile(usn):
+    try:
+        if 'access_token' not in session and 'company_access_token' not in session:
+            return jsonify({'error': 'Please log in first'}), 401
+            
         headers = get_auth_header()
-        print(f"Fetching company jobs with token: {session['company_access_token']}")  # Debug print
-        response = requests.get(f"{API_URL}/job", headers=headers)  # Changed from /company/jobs to /job
-        print(f"Company Jobs API Response: {response.status_code} - {response.text}")  # Debug print
+        if not headers:
+            return jsonify({'error': 'Session expired'}), 401
+            
+        # Get student ID from applicants list
+        response = requests.get(f"{API_URL}/student/{usn}", headers=headers)
+        print(f"Student ID response for {usn}:", response.status_code, response.text)
         
-        jobs = []
-        if response.status_code == 200:
-            try:
-                response_data = response.json()
-                jobs = response_data.get('jobs', [])  # Extract jobs from the response
-                if not isinstance(jobs, list):
-                    jobs = []
-            except:
-                jobs = []
+        if response.status_code != 200:
+            return jsonify({'error': 'Student not found'}), response.status_code
+            
+        student_id = response.json().get('id')
+        if not student_id:
+            return jsonify({'error': 'Student ID not found'}), 400
+            
+        # Now get the profile using student ID
+        response = requests.get(f"{API_URL}/student/{student_id}/profile", headers=headers)
+        print(f"Profile response for student {student_id}:", response.status_code, response.text)
         
-        return render_template('company_dashboard.html', jobs=jobs)
-    except requests.exceptions.RequestException as e:
-        print(f"Company dashboard error: {str(e)}")  # Debug print
-        return render_template('company_dashboard.html', error="Failed to fetch data")
+        if response.status_code == 401:
+            session.clear()
+            return jsonify({'error': 'Session expired'}), 401
+            
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to load profile'}), response.status_code
+            
+        return response.json()
+        
+    except Exception as e:
+        print(f"Error getting student profile: {str(e)}")
+        return jsonify({'error': 'An unexpected error occurred'}), 500
+
+@app.route('/company/job/<int:job_id>/applicants')
+def get_job_applicants(job_id):
+    try:
+        if 'company_access_token' not in session:
+            return jsonify({'error': 'Please log in first'}), 401
+            
+        headers = get_auth_header()
+        if not headers:
+            return jsonify({'error': 'Session expired'}), 401
+            
+        response = requests.get(f"{API_URL}/company/job/{job_id}/applicants", headers=headers)
+        
+        if response.status_code == 401:
+            session.clear()
+            return jsonify({'error': 'Session expired'}), 401
+            
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to load applicants'}), response.status_code
+            
+        return response.json()
+        
+    except Exception as e:
+        print(f"Error getting job applicants: {str(e)}")
+        return jsonify({'error': 'An unexpected error occurred'}), 500
+
+@app.route('/company/job/offer', methods=['POST'])
+def offer_job():
+    try:
+        if 'company_access_token' not in session:
+            return jsonify({'error': 'Please log in first'}), 401
+            
+        headers = get_auth_header()
+        if not headers:
+            return jsonify({'error': 'Session expired'}), 401
+            
+        data = request.get_json()
+        response = requests.post(f"{API_URL}/company/job/offer", 
+                               headers=headers,
+                               json=data)
+        
+        if response.status_code == 401:
+            session.clear()
+            return jsonify({'error': 'Session expired'}), 401
+            
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to offer job'}), response.status_code
+            
+        return jsonify({'message': 'Job offered successfully'})
+        
+    except Exception as e:
+        print(f"Error offering job: {str(e)}")
+        return jsonify({'error': 'An unexpected error occurred'}), 500
+
+@app.route('/company/job/reject', methods=['POST'])
+def reject_applicant():
+    try:
+        if 'company_access_token' not in session:
+            return jsonify({'error': 'Please log in first'}), 401
+            
+        headers = get_auth_header()
+        if not headers:
+            return jsonify({'error': 'Session expired'}), 401
+            
+        data = request.get_json()
+        response = requests.post(f"{API_URL}/company/job/reject", 
+                               headers=headers,
+                               json=data)
+        
+        if response.status_code == 401:
+            session.clear()
+            return jsonify({'error': 'Session expired'}), 401
+            
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to reject applicant'}), response.status_code
+            
+        return jsonify({'message': 'Applicant rejected successfully'})
+        
+    except Exception as e:
+        print(f"Error rejecting applicant: {str(e)}")
+        return jsonify({'error': 'An unexpected error occurred'}), 500
 
 @app.route('/company/post-job', methods=['POST'])
 def post_job():
@@ -489,7 +721,7 @@ def post_job():
         # Format the date properly
         apply_by_date = request.form.get('apply_by_date')
         try:
-            # Parse the datetime from the form
+            # Try to parse the datetime from the form
             date_obj = datetime.fromisoformat(apply_by_date.replace('Z', '+00:00'))
             # Format it as required by the Go backend
             formatted_date = date_obj.strftime('%Y-%m-%d %H:%M:%S')
@@ -535,11 +767,82 @@ def post_job():
         print(f"Job posting error: {str(e)}")  # Debug print
         return render_template('company_dashboard.html', error=f"Error: {str(e)}")
 
+@app.route('/profile/update', methods=['POST'])
+def update_profile():
+    if 'access_token' not in session:
+        return redirect(url_for('login'))
+    
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    headers = get_auth_header()
+    try:
+        # Get form data
+        profile_data = {
+            'name': request.form.get('name'),
+            'email': request.form.get('email'),
+            'phone': request.form.get('phone'),
+            'cgpa': float(request.form.get('cgpa')),
+            'branch': request.form.get('branch'),
+            'graduation_year': int(request.form.get('graduation_year')),
+            'skills': request.form.get('skills'),
+            'resume_link': request.form.get('resume_link')
+        }
+        
+        # Update profile
+        response = requests.put(
+            f"{API_URL}/student/{session['user_id']}/profile",
+            headers=headers,
+            json=profile_data
+        )
+        
+        if response.status_code == 200:
+            flash('Profile updated successfully!', 'success')
+        elif response.status_code == 401:
+            flash('Please login again', 'error')
+            session.clear()
+            return redirect(url_for('login'))
+        else:
+            error_data = response.json()
+            flash(error_data.get('error', 'Failed to update profile'), 'error')
+        
+        return redirect(url_for('dashboard'))
+    except requests.exceptions.RequestException as e:
+        print(f"Error updating profile: {str(e)}")  # Debug print
+        flash('Failed to connect to server', 'error')
+        return redirect(url_for('dashboard'))
+
 @app.route('/logout')
 def logout():
     session.pop('access_token', None)
     session.pop('company_access_token', None)
+    session.pop('user_id', None)
     return redirect(url_for('index'))
+
+@app.route('/company/job')
+def get_company_jobs():
+    try:
+        if 'company_access_token' not in session:
+            return jsonify({'error': 'Please log in first'}), 401
+            
+        headers = get_auth_header()
+        if not headers:
+            return jsonify({'error': 'Session expired'}), 401
+            
+        response = requests.get(f"{API_URL}/company/job", headers=headers)
+        
+        if response.status_code == 401:
+            session.clear()
+            return jsonify({'error': 'Session expired'}), 401
+            
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to load jobs'}), response.status_code
+            
+        return response.json()
+        
+    except Exception as e:
+        print(f"Error getting company jobs: {str(e)}")
+        return jsonify({'error': 'An unexpected error occurred'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

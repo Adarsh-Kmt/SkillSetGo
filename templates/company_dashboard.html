@@ -3,91 +3,123 @@
 {% block title %}SkillSetGo - Company Dashboard{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12 mb-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <h2>Company Dashboard</h2>
-            <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">Logout</a>
-        </div>
-    </div>
-</div>
-
-<!-- Alert Messages -->
-<div id="error-message" class="alert alert-danger" style="display: none;"></div>
-<div id="success-message" class="alert alert-success" style="display: none;"></div>
-
-<!-- Post New Job Section -->
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Post New Job</h5>
-                <form id="job-post-form">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="form-floating">
-                                <input type="text" class="form-control" id="title" name="title" placeholder="Job Title" required>
-                                <label for="title">Job Title</label>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-floating">
-                                <input type="text" class="form-control" id="role" name="role" placeholder="Job Role" required>
-                                <label for="role">Job Role</label>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-floating">
-                                <select class="form-select" id="salary_tier" name="salary_tier" required>
-                                    <option value="">Select Salary Tier</option>
-                                    <option value="Dream">Dream</option>
-                                    <option value="Open Dream">Open Dream</option>
-                                    <option value="Mass Recruitment">Mass Recruitment</option>
-                                </select>
-                                <label for="salary_tier">Salary Tier</label>
-                            </div>
-                        </div>
-                        <div class="col-md-12">
-                            <div class="form-floating">
-                                <textarea class="form-control" id="requirements" name="requirements" style="height: 100px" placeholder="Job Requirements" required></textarea>
-                                <label for="requirements">Job Requirements</label>
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <button type="submit" class="btn btn-primary">Post Job</button>
-                        </div>
-                    </div>
-                </form>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>Welcome, {{ company_name }}</h2>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">Logout</a>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Posted Jobs Section -->
-<div class="row">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Your Posted Jobs</h5>
-                <div id="company-jobs-container">
-                    <!-- Jobs will be loaded dynamically -->
+    <!-- Post New Job Section -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Post New Job</h5>
+                    <form id="job-post-form" action="{{ url_for('post_job') }}" method="POST">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="job_role" name="job_role" placeholder="Job Role" required>
+                                    <label for="job_role">Job Role</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="number" class="form-control" id="ctc" name="ctc" placeholder="CTC (LPA)" required>
+                                    <label for="ctc">CTC (LPA)</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select class="form-select" id="salary_tier" name="salary_tier" required>
+                                        <option value="">Select Salary Tier</option>
+                                        <option value="Dream">Dream</option>
+                                        <option value="Open Dream">Open Dream</option>
+                                        <option value="Mass Recruitment">Mass Recruitment</option>
+                                    </select>
+                                    <label for="salary_tier">Salary Tier</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="number" step="0.01" class="form-control" id="cgpa_cutoff" name="cgpa_cutoff" placeholder="CGPA Cutoff" required>
+                                    <label for="cgpa_cutoff">CGPA Cutoff</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="industry" name="industry" placeholder="Industry" required>
+                                    <label for="industry">Industry</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="datetime-local" class="form-control" id="apply_by_date" name="apply_by_date" required>
+                                    <label for="apply_by_date">Apply By Date</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">Post Job</button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Job Applications Modal -->
-<div class="modal fade" id="applicationsModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Job Applications</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <!-- Posted Jobs Section -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Your Posted Jobs</h5>
+                    <div id="company-jobs-container">
+                        <!-- Jobs will be loaded dynamically -->
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="modal-body">
-                <div id="applications-container">
-                    <!-- Applications will be loaded dynamically -->
+        </div>
+    </div>
+
+    <!-- Applicants Modal -->
+    <div class="modal fade" id="applicationsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Job Applications</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="applications-container">
+                        <!-- Applications will be loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div class="modal fade" id="profileModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Student Profile</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="profile-container">
+                        <!-- Profile will be loaded dynamically -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -96,5 +128,6 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% endblock %}
