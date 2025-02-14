@@ -143,23 +143,25 @@ func (sh *StudentHandler) PerformJobOfferAction(w http.ResponseWriter, r *http.R
 }
 
 func (sh *StudentHandler) GetStudentProfile(w http.ResponseWriter, r *http.Request) (httpError *helper.HTTPError) {
-	vars := mux.Vars(r)
+    vars := mux.Vars(r)
+    studentIdStr := vars["student-id"]
 
-	studentIdString := vars["student-id"]
+    if studentIdStr == "" {
+        return &helper.HTTPError{StatusCode: 400, Error: "invalid student id"}
+    }
 
-	studentId, err := strconv.Atoi(studentIdString)
+    studentId, err := strconv.Atoi(studentIdStr)
+    if err != nil {
+        return &helper.HTTPError{StatusCode: 400, Error: "invalid student id format"}
+    }
 
-	if err != nil || studentId == 0 {
-		return &helper.HTTPError{StatusCode: 400, Error: "invalid student id"}
-	}
+    profile, httpError := sh.studentService.GetStudentProfile(studentId)
+    if httpError != nil {
+        return httpError
+    }
 
-	profile, httpError := sh.studentService.GetStudentProfile(studentId)
-	if httpError != nil {
-		return httpError
-	}
-
-	helper.WriteJSON(w, 200, map[string]any{"profile": profile})
-	return nil
+    helper.WriteJSON(w, 200, map[string]any{"profile": profile})
+    return nil
 }
 
 func (sh *StudentHandler) GetAlreadyAppliedJobs(w http.ResponseWriter, r *http.Request) (httpError *helper.HTTPError) {

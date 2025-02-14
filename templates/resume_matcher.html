@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Resume Matcher{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Resume Matcher</h3>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('match_resume') }}" method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="resume" class="form-label">Upload Resume (PDF)</label>
+                            <input class="form-control" type="file" id="resume" name="resume" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="jobDescription" class="form-label">Job Description</label>
+                            <textarea class="form-control" id="jobDescription" name="jobDescription" rows="5" required placeholder="Paste the job description here..."></textarea>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Match Resume</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,124 +1,152 @@
-# SkillSetGo
+# SkillSetGo: Student Job Platform
 
-## Project Overview
-SkillSetGo is a comprehensive platform connecting students with companies for job opportunities. The platform provides:
-- Company registration and job posting
-- Student profiles and job applications
-- Job offer management
+## 🚀 Project Overview
 
-## Key Features
-### For Companies:
-- Register and manage company profile
-- Post new job opportunities
-- View and manage posted jobs
-- Track student applications
+SkillSetGo is a comprehensive student job application platform designed to bridge the gap between students and potential employers. The platform offers a seamless experience for job seekers and companies, providing robust features for job application, tracking, and management.
 
-### For Students:
-- Create and manage detailed student profile
-  - Personal information (name, email, phone)
-  - Academic details (CGPA, branch, graduation year)
-  - Professional information (skills, resume)
-- Browse available jobs based on eligibility
-- Apply for jobs with profile verification
-- Track application status
-- Manage job offers
+## 🛠 Tech Stack
 
-## Getting Started
+### Backend
+- **Language**: Go (Golang)
+- **Web Framework**: Gorilla Mux
+- **ORM**: SQLC
+- **Authentication**: JWT (JSON Web Tokens)
+
+### Frontend
+- **Language**: Python
+- **Web Framework**: Flask
+- **Frontend**: Bootstrap, Vanilla JavaScript
+- **Template Engine**: Jinja2
+
+### Database
+- **Database**: PostgreSQL
+- **Hosting**: Local development (localhost:8087)
+
+### Additional Tools
+- **Resume Parsing**: Groq AI-powered Resume Matcher
+- **PDF Parsing**: PyPDF2
+
+## 🌟 Key Features
+
+### Student Features
+- Job Discovery
+- Job Application Tracking
+- Profile Management
+- Resume Parsing and Scoring
+
+### Company Features
+- Job Posting
+- Applicant Management
+- Offer Management
+- Candidate Screening
+
+## 🔍 Innovative Components
+
+### Resume Parser
+The Resume Parser is an AI-powered tool that helps students understand how well their resume matches a specific job description.
+
+#### Key Functionalities
+- PDF Resume Upload
+- Job Description Input
+- AI-Powered Matching
+- Detailed Scoring Mechanism
+
+#### How It Works
+1. Upload a PDF resume
+2. Paste a job description
+3. Get an AI-generated compatibility score
+4. Receive insights on resume strengths and weaknesses
+
+### Authentication System
+- Secure JWT-based authentication
+- Separate login flows for students and companies
+- Session management
+- Role-based access control
+
+## 📦 Project Structure
+
+```
+SkillSetGo/
+│
+├── pkg/                # Go backend packages
+│   ├── handler/        # API request handlers
+│   ├── db/             # Database queries and models
+│   └── middleware/     # Authentication middleware
+│
+├── templates/          # HTML templates
+│   ├── index.html
+│   ├── dashboard.html
+│   └── company_dashboard.html
+│
+├── static/             # Static assets
+│   ├── css/
+│   └── js/
+│
+├── innovative component.py  # Resume parsing tool
+├── app.py              # Flask application
+└── requirements.txt    # Python dependencies
+```
+
+## 🚦 Getting Started
+
 ### Prerequisites
+- Python 3.9+
 - Go 1.20+
-- PostgreSQL 14+
-- Node.js 18+
-- Python 3.8+
-- Flask
+- PostgreSQL
+- Groq API Key (for Resume Parser)
 
 ### Installation
+
 1. Clone the repository
-2. Set up environment variables:
-   ```
-   JWT_PRIVATE_KEY=your_jwt_secret
-   FLASK_SECRET_KEY=your_flask_secret
-   ```
-3. Run database migrations
-4. Start the backend server:
-   ```
-   go run main.go
-   ```
-5. Start the frontend application:
-   ```
-   python app.py
-   ```
+```bash
+git clone https://github.com/yourusername/SkillSetGo.git
+cd SkillSetGo
+```
 
-## API Endpoints
-### Authentication
-- POST /student/login: Student login
-- POST /company/login: Company login
+2. Install Python dependencies
+```bash
+pip install -r requirements.txt
+```
 
-### Student Profile Management
-- GET /student/{student-id}/profile: Get student profile
-- PUT /student/{student-id}/profile: Update student profile
+3. Set up PostgreSQL database
+4. Configure environment variables
+5. Run the application
+```bash
+python app.py
+```
 
-### Job Management
-- GET /job: Get all jobs (filtered by student eligibility)
-- POST /job: Create a new job posting
-- GET /company/jobs: Get company's posted jobs
+## 🔐 Environment Configuration
 
-### Student Operations
-- POST /student/apply/{job-id}: Apply for a job
-- GET /student/offer: Get student's job offers
-- PUT /student/offer: Update job offer status
+Create a `.env` file with the following variables:
+```
+DATABASE_URL=postgresql://username:password@localhost:8087/skillsetgo
+JWT_SECRET=your_secret_key
+GROQ_API_KEY=your_groq_api_key
+```
 
-## Database Schema Overview
-### Main Tables
-- `company_table`: Stores company information
-- `student_table`: Stores student information and profile
-- `job_table`: Stores job postings
-- `student_job_application_table`: Tracks job applications
-- `student_offer_table`: Manages job offers
+## 🧪 Testing
 
-## Features
-### Student Profile Management
-Students can manage their profiles with:
-- Personal Information
-  - Full name
-  - Email address
-  - Phone number
-- Academic Details
-  - CGPA
-  - Branch/Department
-  - Year of graduation
-- Professional Information
-  - Skills (comma-separated)
-  - Resume link
-- Real-time profile updates
-- Profile completeness validation
+- Unit Tests: Located in `tests/` directory
+- Integration Tests: Covers API endpoints and database interactions
 
-### Job Application System
-Students can apply for jobs through a streamlined process:
-- Pre-application profile verification
-- Profile details confirmation modal
-- Automatic eligibility checking based on:
-  - CGPA requirements
-  - Branch/department matching
-  - Batch year
-- Real-time application status updates
-- Prevention of duplicate applications
-- Immediate feedback on application success/failure
+## 🤝 Contributing
 
-## Error Handling
-The API uses consistent error responses with:
-- HTTP status code
-- Error message
-- Timestamp
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
-## Deployment
-### Production
-- Use Docker containers
-- Configure reverse proxy
-- Enable HTTPS
+## 📄 License
 
-### Monitoring
-- Prometheus for metrics
-- Grafana for visualization
-- Sentry for error tracking
+This project is licensed under the MIT License.
 
-Create a pull request before merging anything to master.
+## 🙌 Acknowledgements
+
+- Groq AI for Resume Parsing
+- Bootstrap for Frontend Design
+- Flask and Go Communities
+
+## 📞 Support
+
+For issues or questions, please open a GitHub issue or contact support@skillsetgo.com
