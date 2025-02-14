@@ -16,6 +16,53 @@
 <div class="alert alert-danger">{{ error }}</div>
 {% endif %}
 
+<!-- Alert Messages -->
+<div id="error-message" class="alert alert-danger" style="display: none;"></div>
+<div id="success-message" class="alert alert-success" style="display: none;"></div>
+
+<!-- Applied Jobs Section -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Your Applied Jobs</h5>
+                {% if applied_jobs %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Company</th>
+                                    <th>Role</th>
+                                    <th>Salary Tier</th>
+                                    <th>Status</th>
+                                    <th>Applied Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for job in applied_jobs %}
+                                <tr>
+                                    <td>{{ job.company_name }}</td>
+                                    <td>{{ job.job_role }}</td>
+                                    <td><span class="badge bg-primary">{{ job.salary_tier }}</span></td>
+                                    <td>
+                                        <span class="badge {% if job.status == 'PENDING' %}bg-warning{% elif job.status == 'ACCEPTED' %}bg-success{% elif job.status == 'REJECTED' %}bg-danger{% endif %}">
+                                            {{ job.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ job.applied_date }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">You haven't applied to any jobs yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Job Offers Section -->
 <div class="row mb-4">
     <div class="col-md-12">
@@ -41,14 +88,22 @@
                                     <td>{{ offer.job_role }}</td>
                                     <td><span class="badge bg-primary">{{ offer.salary_tier }}</span></td>
                                     <td>
-                                        <span class="badge {% if offer.status == 'Pending' %}bg-warning{% elif offer.status == 'Accepted' %}bg-success{% elif offer.status == 'Rejected' %}bg-danger{% endif %}">
+                                        <span class="badge {% if offer.status == 'PENDING' %}bg-warning{% elif offer.status == 'ACCEPTED' %}bg-success{% elif offer.status == 'REJECTED' %}bg-danger{% endif %}">
                                             {{ offer.status }}
                                         </span>
                                     </td>
                                     <td>
-                                        {% if offer.status == 'Pending' %}
-                                            <button class="btn btn-sm btn-success me-2" onclick="handleOfferAction({{ offer.id }}, 'accept')">Accept</button>
-                                            <button class="btn btn-sm btn-danger" onclick="handleOfferAction({{ offer.id }}, 'reject')">Reject</button>
+                                        {% if offer.status == 'PENDING' %}
+                                            <form action="{{ url_for('offer_action') }}" method="POST" class="d-inline">
+                                                <input type="hidden" name="offer_id" value="{{ offer.offer_id }}">
+                                                <input type="hidden" name="action" value="accept">
+                                                <button type="submit" class="btn btn-sm btn-success me-2">Accept</button>
+                                            </form>
+                                            <form action="{{ url_for('offer_action') }}" method="POST" class="d-inline">
+                                                <input type="hidden" name="offer_id" value="{{ offer.offer_id }}">
+                                                <input type="hidden" name="action" value="reject">
+                                                <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+                                            </form>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -67,145 +122,78 @@
 <!-- Available Jobs Section -->
 <div class="row">
     <div class="col-md-12">
-        <div class="card mb-4">
+        <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Available Jobs</h5>
                 
                 <!-- Job Filters -->
                 <div class="mb-4">
-                    <form id="filterForm" class="row g-3">
-                        <div class="col-md-4">
-                            <select class="form-select" name="salary-tier">
-                                <option value="">All Salary Tiers</option>
-                                <option value="Dream">Dream</option>
-                                <option value="Open Dream">Open Dream</option>
-                                <option value="Mass Recruitment">Mass Recruitment</option>
-                            </select>
+                    <div class="row g-3">
+                        <!-- Salary Tier Filters -->
+                        <div class="col-md-12 mb-3">
+                            <h6>Salary Tier</h6>
+                            <div class="btn-group" role="group">
+                                <input type="checkbox" class="btn-check job-filter" name="salary-tier" id="tier-dream" value="Dream">
+                                <label class="btn btn-outline-primary" for="tier-dream">Dream</label>
+
+                                <input type="checkbox" class="btn-check job-filter" name="salary-tier" id="tier-open-dream" value="Open Dream">
+                                <label class="btn btn-outline-primary" for="tier-open-dream">Open Dream</label>
+
+                                <input type="checkbox" class="btn-check job-filter" name="salary-tier" id="tier-mass" value="Mass Recruitment">
+                                <label class="btn btn-outline-primary" for="tier-mass">Mass Recruitment</label>
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <input type="text" class="form-control" name="job-role" placeholder="Filter by Role">
-                        </div>
-                        <div class="col-md-4">
-                            <input type="text" class="form-control" name="company" placeholder="Filter by Company">
-                        </div>
-                    </form>
+                    </div>
                 </div>
 
                 <!-- Jobs List -->
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Company</th>
-                                <th>Role</th>
-                                <th>Salary Tier</th>
-                                <th>Description</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% if jobs %}
-                                {% for job in jobs %}
-                                <tr>
-                                    <td>{{ job.company_name }}</td>
-                                    <td>{{ job.job_role }}</td>
-                                    <td><span class="badge bg-primary">{{ job.salary_tier }}</span></td>
-                                    <td>{{ job.description }}</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-success apply-btn" 
-                                                data-job-id="{{ job.id }}"
-                                                onclick="applyForJob({{ job.id }})">
-                                            Apply
-                                        </button>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            {% else %}
-                                <tr>
-                                    <td colspan="5" class="text-center">No jobs available at the moment.</td>
-                                </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
+                {% if jobs %}
+                <div class="row" id="jobs-container">
+                    {% for job in jobs %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 job-card" data-salary-tier="{{ job.salary_tier }}">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ job.job_role }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">{{ job.company_name }}</h6>
+                                <div class="mb-2">
+                                    <span class="badge bg-primary">{{ job.salary_tier }}</span>
+                                    {% if job.ctc %}
+                                    <span class="badge bg-info">CTC: {{ job.ctc }} LPA</span>
+                                    {% endif %}
+                                </div>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        {% if job.industry %}
+                                        <strong>Industry:</strong> {{ job.industry }}<br>
+                                        {% endif %}
+                                        {% if job.cgpa_cutoff %}
+                                        <strong>CGPA Required:</strong> {{ job.cgpa_cutoff }}<br>
+                                        {% endif %}
+                                        {% if job.apply_by_date %}
+                                        <strong>Apply By:</strong> {{ job.apply_by_date }}
+                                        {% endif %}
+                                    </small>
+                                </p>
+                                <form action="{{ url_for('apply_job', job_id=job.job_id) }}" method="POST" class="mt-3 job-application-form">
+                                    <input type="hidden" name="job_id" value="{{ job.job_id }}">
+                                    <button type="submit" class="btn btn-primary" {% if not job.can_apply or job.has_applied %}disabled{% endif %}>
+                                        {% if job.has_applied %}Already Applied{% elif job.can_apply %}Apply Now{% else %}Not Eligible{% endif %}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
+                {% else %}
+                <div class="alert alert-info">No jobs available at the moment.</div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
-{% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle filter form changes
-    const filterForm = document.getElementById('filterForm');
-    const filterInputs = filterForm.querySelectorAll('input, select');
-    
-    filterInputs.forEach(input => {
-        input.addEventListener('change', function() {
-            const formData = new FormData(filterForm);
-            const queryParams = new URLSearchParams();
-            
-            formData.forEach((value, key) => {
-                if (value) {
-                    queryParams.append(key, value);
-                }
-            });
-            
-            window.location.href = `{{ url_for('dashboard') }}?${queryParams.toString()}`;
-        });
-    });
-});
-
-function applyForJob(jobId) {
-    fetch(`/apply/${jobId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Successfully applied for the job!');
-            const applyBtn = document.querySelector(`button[data-job-id="${jobId}"]`);
-            applyBtn.disabled = true;
-            applyBtn.textContent = 'Applied';
-            window.location.reload(); // Refresh to show updated offers
-        } else {
-            alert('Failed to apply for the job. Please try again.');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while applying for the job.');
-    });
-}
-
-function handleOfferAction(offerId, action) {
-    fetch('/offer/action', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            offer_id: offerId,
-            action: action
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(`Successfully ${action}ed the job offer!`);
-            window.location.reload();
-        } else {
-            alert('Failed to process the job offer. Please try again.');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while processing the job offer.');
-    });
-}
-</script>
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% endblock %}
