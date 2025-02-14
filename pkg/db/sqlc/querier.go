@@ -27,6 +27,7 @@ type Querier interface {
 	GetJobOfferActByDate(ctx context.Context, arg GetJobOfferActByDateParams) (pgtype.Timestamp, error)
 	GetJobOffers(ctx context.Context, studentID int32) ([]*GetJobOffersRow, error)
 	GetJobs(ctx context.Context, arg GetJobsParams) ([]*GetJobsRow, error)
+	GetOfferStatus(ctx context.Context, jobID int32) ([]*GetOfferStatusRow, error)
 	GetPublishedJobs(ctx context.Context, companyID int32) ([]*GetPublishedJobsRow, error)
 	GetStudentProfile(ctx context.Context, studentID int32) (*GetStudentProfileRow, error)
 	InsertUser(ctx context.Context, arg InsertUserParams) error

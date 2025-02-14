@@ -17,6 +17,7 @@ type CompanyService interface {
 	OfferJob(request entity.OfferJobRequest) (httpError *helper.HTTPError)
 	GetPublishedJobs(companyId int) (jobs []*sqlc.GetPublishedJobsRow, httpError *helper.HTTPError)
 	GetJobApplicants(companyId int, jobId int) (profiles []*sqlc.GetJobApplicantsRow, httpError *helper.HTTPError)
+	GetOfferStatus(companyId int, jobId int) (offerStatus []*sqlc.GetOfferStatusRow, httpError *helper.HTTPError)
 }
 type CompanyServiceImpl struct {
 }
@@ -99,5 +100,27 @@ func (service *CompanyServiceImpl) GetJobApplicants(companyId int, jobId int) (p
 		return nil, &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
 	}
 
+	return rows, nil
+}
+
+func (service *CompanyServiceImpl) GetOfferStatus(companyId int, jobId int) (offerStatus []*sqlc.GetOfferStatusRow, httpError *helper.HTTPError) {
+
+	checkParams := sqlc.CheckIfCompanyCreatedJobParams{CompanyID: int32(companyId), JobID: int32(jobId)}
+
+	wasCreated, err := db.Client.CheckIfCompanyCreatedJob(context.TODO(), checkParams)
+
+	if err != nil {
+		return nil, &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
+	}
+
+	if !wasCreated {
+		return nil, &helper.HTTPError{StatusCode: 403, Error: "company did not publish job"}
+	}
+
+	rows, err := db.Client.GetOfferStatus(context.TODO(), int32(jobId))
+
+	if err != nil {
+		return nil, &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
+	}
 	return rows, nil
 }
