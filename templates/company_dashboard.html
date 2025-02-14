@@ -156,18 +156,6 @@
             </div>
             <div class="modal-body">
                 <div id="offerStatusTableContainer">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Student Name</th>
-                                <th>USN</th>
-                                <th>Status</th>
-                                <th>Action Date</th>
-                            </tr>
-                        </thead>
-                        <tbody id="offerStatusTableBody">
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </div>
@@ -356,8 +344,10 @@ function rejectApplication(jobId, studentId) {
 }
 
 function viewOfferStatus(jobId) {
-    fetch(`/company/job/${jobId}/offer-status`)
+    console.log('Fetching offer status for job:', jobId);
+    fetch(`/company/job/${jobId}/offer`)
         .then(response => {
+            console.log('Offer status response:', response.status);
             if (!response.ok) {
                 if (response.status === 401) {
                     window.location.href = '/company/login';
@@ -368,27 +358,40 @@ function viewOfferStatus(jobId) {
             return response.json();
         })
         .then(data => {
-            if (data.error) {
-                throw new Error(data.error);
-            }
-
+            console.log('Offer status data:', data);
             const offers = data.offers || [];
-            const tbody = document.getElementById('offerStatusTableBody');
-            tbody.innerHTML = '';
-
-            offers.forEach(offer => {
-                const row = document.createElement('tr');
-                const actionDate = new Date(offer.action_date).toLocaleString();
-                const statusClass = offer.action === 'accepted' ? 'text-success' : 'text-danger';
+            const container = document.getElementById('offerStatusTableContainer');
+            
+            if (offers.length > 0) {
+                let tableHtml = `
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>USN</th>
+                                <th>Status</th>
+                                <th>Action Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
                 
-                row.innerHTML = `
-                    <td>${offer.name || 'N/A'}</td>
-                    <td>${offer.usn || 'N/A'}</td>
-                    <td class="${statusClass}">${offer.action || 'Pending'}</td>
-                    <td>${actionDate}</td>
-                `;
-                tbody.appendChild(row);
-            });
+                offers.forEach(offer => {
+                    const actionDate = new Date(offer.action_date).toLocaleString();
+                    const statusClass = offer.action === 'accepted' ? 'text-success' : 'text-danger';
+                    tableHtml += `
+                        <tr>
+                            <td>${offer.name || 'N/A'}</td>
+                            <td>${offer.usn || 'N/A'}</td>
+                            <td class="${statusClass}">${offer.action || 'Pending'}</td>
+                            <td>${actionDate}</td>
+                        </tr>`;
+                });
+                
+                tableHtml += '</tbody></table>';
+                container.innerHTML = tableHtml;
+            } else {
+                container.innerHTML = '<div class="alert alert-info">No offers found for this job.</div>';
+            }
 
             // Show the modal
             const modal = new bootstrap.Modal(document.getElementById('offerStatusModal'));
@@ -396,7 +399,8 @@ function viewOfferStatus(jobId) {
         })
         .catch(error => {
             console.error('Error:', error);
-            alert(error.message || 'Failed to load offer status');
+            const container = document.getElementById('offerStatusTableContainer');
+            container.innerHTML = '<div class="alert alert-danger">Failed to load offer status</div>';
         });
 }
 </script>

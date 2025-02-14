@@ -36,13 +36,11 @@ func postgresConfiguration() (*postgresConfig, error) {
 	if err != nil {
 		logger.Fatalf("Error loading .env file: %v", err)
 	}
+
 	config.password = os.Getenv("DB_PASSWORD")
 	config.username = os.Getenv("DB_USERNAME")
-
 	config.port = os.Getenv("DB_PORT")
-
 	config.host = os.Getenv("DB_HOST")
-
 	config.database = os.Getenv("DB_DATABASE")
 
 	logger.Println("password : " + config.password)
@@ -50,6 +48,7 @@ func postgresConfiguration() (*postgresConfig, error) {
 	logger.Println("port : " + config.port)
 	logger.Println("host : " + config.host)
 	logger.Println("database : " + config.database)
+
 	return config, nil
 
 }

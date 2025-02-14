@@ -103,17 +103,67 @@ git clone https://github.com/yourusername/SkillSetGo.git
 cd SkillSetGo
 ```
 
-2. Install Python dependencies
+2. Set up environment variables
+```bash
+# Copy the example env file
+cp .env.example .env
+
+# Edit .env with your configuration
+# Make sure to update:
+# - Database credentials
+# - JWT secret
+# - Groq API key
+```
+
+3. Set up the database
+```bash
+# Create PostgreSQL database
+createdb skillsetgo
+
+# Run migrations
+psql -d skillsetgo -f pkg/db/migrations/00001_init_schema.sql
+```
+
+4. Install Python dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Set up PostgreSQL database
-4. Configure environment variables
-5. Run the application
+5. Start the Go backend server
+```bash
+# From project root
+go run main.go
+```
+
+6. Start the Flask frontend server (in a new terminal)
 ```bash
 python app.py
 ```
+
+The application should now be running at:
+- Frontend: http://localhost:5000
+- Backend API: http://localhost:8080
+
+### Common Setup Issues
+
+1. Database Connection
+- Ensure PostgreSQL is running on port 8087 (or update DB_PORT in .env)
+- Check database credentials in .env
+- Verify database migrations are applied
+
+2. API Communication
+- Backend must be running on port 8080
+- Check API_URL in .env matches backend URL
+
+3. Resume Parser
+- Ensure GROQ_API_KEY is set in .env
+- Test connection to Groq API
+
+4. Authentication
+- Verify JWT_SECRET is set in .env
+- Clear browser cookies if login issues persist
+
+For any other issues, please check the logs or open a GitHub issue.
 
 ## 🔐 Environment Configuration
 

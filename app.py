@@ -1006,7 +1006,7 @@ def proxy_to_api(path):
         print(f"Error proxying request: {str(e)}")
         return jsonify({'error': 'Failed to proxy request'}), 500
 
-@app.route('/company/job/<int:job_id>/offer-status')
+@app.route('/company/job/<int:job_id>/offer')
 def get_offer_status(job_id):
     try:
         if 'company_access_token' not in session:
@@ -1016,7 +1016,7 @@ def get_offer_status(job_id):
             'Auth': session['company_access_token']
         }
             
-        # Get offer status from API
+        # Get offer status from API - note the job-id format to match Go backend
         response = requests.get(
             f"{API_URL}/company/job/{job_id}/offer",
             headers=headers
