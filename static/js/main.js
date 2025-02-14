@@ -139,12 +139,12 @@ function viewApplicants(jobId) {
     modal.show();
     
     fetch(`/company/job/${jobId}/applicants`)
-        .then(response => {
-            if (!response.ok) {
+    .then(response => {
+        if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
+        }
+        return response.json();
+    })
         .then(data => {
             console.log('Applicants data:', data); // Debug log
             const applicants = data.profiles || [];
@@ -162,8 +162,8 @@ function viewApplicants(jobId) {
                         </div>
                         <div class="mt-3">
                             <button class="btn btn-sm btn-outline-primary me-2" onclick="viewProfile('${applicant.usn}')">
-                                View Profile
-                            </button>
+                            View Profile
+                        </button>
                             <button class="btn btn-sm btn-success me-2" onclick="offerJob(${jobId}, '${applicant.usn}')">
                                 Offer Job
                             </button>
@@ -174,11 +174,11 @@ function viewApplicants(jobId) {
                     </div>
                 </div>
             `).join('') : '<p class="text-center">No applications yet</p>';
-        })
-        .catch(error => {
+    })
+    .catch(error => {
             console.error('Error loading applicants:', error);
             container.innerHTML = '<div class="alert alert-danger">Failed to load applicants</div>';
-        });
+    });
 }
 
 function viewProfile(usn) {
@@ -189,12 +189,12 @@ function viewProfile(usn) {
     modal.show();
     
     fetch(`/student/${usn}/profile`)
-        .then(response => {
-            if (!response.ok) {
+    .then(response => {
+        if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
+        }
+        return response.json();
+    })
         .then(data => {
             console.log('Profile data:', data); // Debug log
             const profile = data.profile || data;
@@ -237,18 +237,18 @@ function viewProfile(usn) {
                             ` : ''}
                         </div>
                     </div>
-                </div>
-            `;
-        })
-        .catch(error => {
+            </div>
+        `;
+    })
+    .catch(error => {
             console.error('Error loading profile:', error);
             container.innerHTML = '<div class="alert alert-danger">Failed to load profile. Please try again later.</div>';
-        });
+    });
 }
 
 function offerJob(jobId, usn) {
     if (!confirm('Are you sure you want to offer this job to the student?')) return;
-    
+
     fetch('/company/job/offer', {
         method: 'POST',
         headers: {
@@ -269,7 +269,7 @@ function offerJob(jobId, usn) {
 
 function rejectApplicant(jobId, usn) {
     if (!confirm('Are you sure you want to reject this applicant?')) return;
-    
+
     fetch('/company/job/reject', {
         method: 'POST',
         headers: {

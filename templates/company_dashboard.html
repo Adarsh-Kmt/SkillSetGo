@@ -25,22 +25,22 @@
                                 <div class="form-floating">
                                     <input type="text" class="form-control" id="job_role" name="job_role" placeholder="Job Role" required>
                                     <label for="job_role">Job Role</label>
-                                </div>
+                            </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating">
                                     <input type="number" class="form-control" id="ctc" name="ctc" placeholder="CTC (LPA)" required>
                                     <label for="ctc">CTC (LPA)</label>
-                                </div>
+                        </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating">
-                                    <select class="form-select" id="salary_tier" name="salary_tier" required>
+                                <select class="form-select" id="salary_tier" name="salary_tier" required>
                                         <option value="">Select Salary Tier</option>
-                                        <option value="Dream">Dream</option>
-                                        <option value="Open Dream">Open Dream</option>
-                                        <option value="Mass Recruitment">Mass Recruitment</option>
-                                    </select>
+                                    <option value="Dream">Dream</option>
+                                    <option value="Open Dream">Open Dream</option>
+                                    <option value="Mass Recruitment">Mass Recruitment</option>
+                                </select>
                                     <label for="salary_tier">Salary Tier</label>
                                 </div>
                             </div>
@@ -48,8 +48,8 @@
                                 <div class="form-floating">
                                     <input type="number" step="0.01" class="form-control" id="cgpa_cutoff" name="cgpa_cutoff" placeholder="CGPA Cutoff" required>
                                     <label for="cgpa_cutoff">CGPA Cutoff</label>
-                                </div>
-                            </div>
+                        </div>
+                        </div>
                             <div class="col-md-6">
                                 <div class="form-floating">
                                     <input type="text" class="form-control" id="industry" name="industry" placeholder="Industry" required>
@@ -85,20 +85,20 @@
                                 <span class="visually-hidden">Loading...</span>
                             </div>
                         </div>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
     <!-- Applicants Modal -->
     <div class="modal fade" id="applicationsModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
+        <div class="modal-content">
+            <div class="modal-header">
                     <h5 class="modal-title">Job Applications</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
+            </div>
                 <div class="modal-body">
                     <div id="applications-container">
                         <!-- Applications will be loaded dynamically -->
