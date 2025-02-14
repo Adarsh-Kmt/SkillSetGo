@@ -3,7 +3,7 @@ package entity
 import (
 	"time"
 
-	"github.com/adarsh-kmt/skillsetgo/pkg/util"
+	"github.com/adarsh-kmt/skillsetgo/pkg/helper"
 )
 
 var (
@@ -32,7 +32,7 @@ type OfferJobRequest struct {
 	ActByDate string `json:"act_by_date"`
 }
 
-func ValidateCreateJobRequest(request CreateJobRequest) (httpError *util.HTTPError) {
+func ValidateCreateJobRequest(request CreateJobRequest) (httpError *helper.HTTPError) {
 
 	var (
 		abd time.Time
@@ -68,7 +68,7 @@ func ValidateCreateJobRequest(request CreateJobRequest) (httpError *util.HTTPErr
 	for _, branch := range request.EligibleBranches {
 		if branch == "" {
 			eligibleBranchesErrorList = append(eligibleBranchesErrorList, "branch cannot be empty")
-			//return &util.HTTPError{StatusCode: 400, Error: "branch cannot be empty"}
+			//return &helper.HTTPError{StatusCode: 400, Error: "branch cannot be empty"}
 		}
 		flag := false
 		for _, validBranch := range validBranches {
@@ -79,7 +79,7 @@ func ValidateCreateJobRequest(request CreateJobRequest) (httpError *util.HTTPErr
 		}
 		if !flag {
 			eligibleBranchesErrorList = append(eligibleBranchesErrorList, "branch must be one of these valid branches")
-			//return &util.HTTPError{StatusCode: 400, Error: fmt.Sprintf("branch must be one of these valid branches %v", validBranches)}
+			//return &helper.HTTPError{StatusCode: 400, Error: fmt.Sprintf("branch must be one of these valid branches %v", validBranches)}
 		}
 
 	}
@@ -89,24 +89,24 @@ func ValidateCreateJobRequest(request CreateJobRequest) (httpError *util.HTTPErr
 	}
 	if request.CgpaCutoff < 0 || request.CgpaCutoff >= 10 {
 		errorMap["cgpa_cutoff"] = "cgpa_cutoff cannot be negative/greater than 10"
-		//return &util.HTTPError{StatusCode: 400, Error: }
+		//return &helper.HTTPError{StatusCode: 400, Error: }
 	}
 
 	if errorMap["apply_by_date"] != nil {
-		return &util.HTTPError{StatusCode: 400, Error: errorMap}
+		return &helper.HTTPError{StatusCode: 400, Error: errorMap}
 	}
 	if time.Now().After(abd) {
 		errorMap["apply_by_date"] = "apply by date expired"
 	}
 
 	if len(errorMap) != 0 {
-		return &util.HTTPError{StatusCode: 400, Error: errorMap}
+		return &helper.HTTPError{StatusCode: 400, Error: errorMap}
 
 	}
 	return nil
 }
 
-func ValidatePerformJobOfferActionRequest(request PerformJobOfferActionRequest) *util.HTTPError {
+func ValidatePerformJobOfferActionRequest(request PerformJobOfferActionRequest) *helper.HTTPError {
 
 	errorMap := make(map[string]string)
 	if request.Action != "REJECT" && request.Action != "ACCEPT" {
@@ -118,13 +118,13 @@ func ValidatePerformJobOfferActionRequest(request PerformJobOfferActionRequest) 
 	}
 
 	if len(errorMap) != 0 {
-		return &util.HTTPError{StatusCode: 400, Error: errorMap}
+		return &helper.HTTPError{StatusCode: 400, Error: errorMap}
 	}
 
 	return nil
 }
 
-func ValidateOfferJobRequest(request OfferJobRequest) *util.HTTPError {
+func ValidateOfferJobRequest(request OfferJobRequest) *helper.HTTPError {
 
 	errorMap := make(map[string]string)
 
@@ -140,14 +140,14 @@ func ValidateOfferJobRequest(request OfferJobRequest) *util.HTTPError {
 	if err != nil {
 		errorMap["act_by_date"] = "invalid act_by_date format"
 
-		return &util.HTTPError{StatusCode: 400, Error: errorMap}
+		return &helper.HTTPError{StatusCode: 400, Error: errorMap}
 	}
 
 	if time.Now().After(abd) {
 		errorMap["act_by_date"] = "apply by date expired"
 	}
 	if len(errorMap) != 0 {
-		return &util.HTTPError{StatusCode: 400, Error: errorMap}
+		return &helper.HTTPError{StatusCode: 400, Error: errorMap}
 	}
 
 	return nil

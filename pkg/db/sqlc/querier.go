@@ -11,21 +11,27 @@ import (
 )
 
 type Querier interface {
+	ApplyForJob(ctx context.Context, arg ApplyForJobParams) error
 	AuthenticateCompany(ctx context.Context, arg AuthenticateCompanyParams) (int32, error)
 	AuthenticateStudent(ctx context.Context, arg AuthenticateStudentParams) (int32, error)
+	CheckIfAppliedForJobAlready(ctx context.Context, arg CheckIfAppliedForJobAlreadyParams) (bool, error)
+	CheckIfCompanyCreatedJob(ctx context.Context, arg CheckIfCompanyCreatedJobParams) (bool, error)
 	CheckIfCompanyExists(ctx context.Context, companyName string) (bool, error)
 	CheckIfStudentExists(ctx context.Context, usn string) (bool, error)
 	CreateCompany(ctx context.Context, arg CreateCompanyParams) error
 	CreateJob(ctx context.Context, arg CreateJobParams) error
-	GetAlreadyAppliedJobs(ctx context.Context, studentID int32) ([]int32, error)
+	GetAlreadyAppliedJobIds(ctx context.Context, studentID int32) ([]int32, error)
+	GetAlreadyAppliedJobs(ctx context.Context, studentID int32) ([]*GetAlreadyAppliedJobsRow, error)
 	GetEligibleStudents(ctx context.Context, jobID int32) ([]*GetEligibleStudentsRow, error)
+	GetJobApplicants(ctx context.Context, jobID int32) ([]*GetJobApplicantsRow, error)
 	GetJobOfferActByDate(ctx context.Context, arg GetJobOfferActByDateParams) (pgtype.Timestamp, error)
 	GetJobOffers(ctx context.Context, studentID int32) ([]*GetJobOffersRow, error)
 	GetJobs(ctx context.Context, arg GetJobsParams) ([]*GetJobsRow, error)
+	GetPublishedJobs(ctx context.Context, companyID int32) ([]*GetPublishedJobsRow, error)
+	GetStudentProfile(ctx context.Context, studentID int32) (*GetStudentProfileRow, error)
 	InsertUser(ctx context.Context, arg InsertUserParams) error
 	OfferJob(ctx context.Context, arg OfferJobParams) error
 	PerformJobOfferAction(ctx context.Context, arg PerformJobOfferActionParams) error
-	RegisterForJob(ctx context.Context, arg RegisterForJobParams) error
 }
 
 var _ Querier = (*Queries)(nil)

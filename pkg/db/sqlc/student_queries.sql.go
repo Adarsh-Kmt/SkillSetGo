@@ -11,41 +11,107 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const getEligibleStudents = `-- name: GetEligibleStudents :many
-SELECT student_table.student_id, usn, name, branch, cgpa, num_active_backlogs, email_id
-FROM student_job_application_table
-JOIN student_table
-ON student_table.student_id = student_job_application_table.student_id
-WHERE job_id = $1
+const applyForJob = `-- name: ApplyForJob :exec
+INSERT INTO student_job_application_table(student_id, job_id, applied_on_date)
+VALUES($1, $2, NOW())
 `
 
-type GetEligibleStudentsRow struct {
-	StudentID         int32   `json:"student_id"`
-	Usn               string  `json:"usn"`
-	Name              string  `json:"name"`
-	Branch            string  `json:"branch"`
-	Cgpa              float32 `json:"cgpa"`
-	NumActiveBacklogs int32   `json:"num_active_backlogs"`
-	EmailID           string  `json:"email_id"`
+type ApplyForJobParams struct {
+	StudentID int32 `json:"student_id"`
+	JobID     int32 `json:"job_id"`
 }
 
-func (q *Queries) GetEligibleStudents(ctx context.Context, jobID int32) ([]*GetEligibleStudentsRow, error) {
-	rows, err := q.db.Query(ctx, getEligibleStudents, jobID)
+func (q *Queries) ApplyForJob(ctx context.Context, arg ApplyForJobParams) error {
+	_, err := q.db.Exec(ctx, applyForJob, arg.StudentID, arg.JobID)
+	return err
+}
+
+const checkIfAppliedForJobAlready = `-- name: CheckIfAppliedForJobAlready :one
+SELECT EXISTS(
+    SELECT job_id
+    from student_job_application_table
+    WHERE job_id = $1
+    AND student_id = $2
+)
+`
+
+type CheckIfAppliedForJobAlreadyParams struct {
+	JobID     int32 `json:"job_id"`
+	StudentID int32 `json:"student_id"`
+}
+
+func (q *Queries) CheckIfAppliedForJobAlready(ctx context.Context, arg CheckIfAppliedForJobAlreadyParams) (bool, error) {
+	row := q.db.QueryRow(ctx, checkIfAppliedForJobAlready, arg.JobID, arg.StudentID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const getAlreadyAppliedJobIds = `-- name: GetAlreadyAppliedJobIds :many
+SELECT job_id
+FROM student_job_application_table
+WHERE student_id = $1
+`
+
+func (q *Queries) GetAlreadyAppliedJobIds(ctx context.Context, studentID int32) ([]int32, error) {
+	rows, err := q.db.Query(ctx, getAlreadyAppliedJobIds, studentID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []*GetEligibleStudentsRow
+	var items []int32
 	for rows.Next() {
-		var i GetEligibleStudentsRow
+		var job_id int32
+		if err := rows.Scan(&job_id); err != nil {
+			return nil, err
+		}
+		items = append(items, job_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getAlreadyAppliedJobs = `-- name: GetAlreadyAppliedJobs :many
+SELECT j.job_id, job_role, job_type, ctc, salary_tier, apply_by_date, cgpa_cutoff, eligible_batch, eligible_branches
+FROM student_job_application_table as sj
+JOIN job_table as j
+ON sj.job_id = j.job_id
+WHERE sj.student_id = $1
+`
+
+type GetAlreadyAppliedJobsRow struct {
+	JobID            int32            `json:"job_id"`
+	JobRole          string           `json:"job_role"`
+	JobType          string           `json:"job_type"`
+	Ctc              float32          `json:"ctc"`
+	SalaryTier       string           `json:"salary_tier"`
+	ApplyByDate      pgtype.Timestamp `json:"apply_by_date"`
+	CgpaCutoff       float32          `json:"cgpa_cutoff"`
+	EligibleBatch    int32            `json:"eligible_batch"`
+	EligibleBranches []string         `json:"eligible_branches"`
+}
+
+func (q *Queries) GetAlreadyAppliedJobs(ctx context.Context, studentID int32) ([]*GetAlreadyAppliedJobsRow, error) {
+	rows, err := q.db.Query(ctx, getAlreadyAppliedJobs, studentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetAlreadyAppliedJobsRow
+	for rows.Next() {
+		var i GetAlreadyAppliedJobsRow
 		if err := rows.Scan(
-			&i.StudentID,
-			&i.Usn,
-			&i.Name,
-			&i.Branch,
-			&i.Cgpa,
-			&i.NumActiveBacklogs,
-			&i.EmailID,
+			&i.JobID,
+			&i.JobRole,
+			&i.JobType,
+			&i.Ctc,
+			&i.SalaryTier,
+			&i.ApplyByDate,
+			&i.CgpaCutoff,
+			&i.EligibleBatch,
+			&i.EligibleBranches,
 		); err != nil {
 			return nil, err
 		}
@@ -127,6 +193,112 @@ func (q *Queries) GetJobOffers(ctx context.Context, studentID int32) ([]*GetJobO
 	return items, nil
 }
 
+const getJobs = `-- name: GetJobs :many
+SELECT job_id, job_role, ctc, salary_tier, apply_by_date, cgpa_cutoff, company_name, industry,
+       (CASE WHEN
+                 cgpa_cutoff <= (SELECT cgpa FROM student_table WHERE student_id = $1) THEN TRUE
+             ELSE FALSE
+           END) AS can_apply
+FROM job_table JOIN company_table
+                    ON job_table.company_id = company_table.company_id
+WHERE (COALESCE(array_length($2::VARCHAR[], 1), 0) = 0 OR salary_tier = ANY($2))
+  AND (COALESCE(array_length($3::VARCHAR[], 1), 0) = 0 OR job_role = ANY($3))
+  AND (COALESCE(array_length($4::VARCHAR[], 1), 0) = 0 OR company_name = ANY($4))
+  AND NOW() < apply_by_date
+  AND (COALESCE(array_length($5::INT[], 1), 0) = 0 OR job_id <> ANY($5))
+  AND ARRAY(SELECT branch FROM student_table WHERE student_id = $1) && eligible_branches
+AND job_table.eligible_batch = (SELECT batch from student_table where student_id = $1)
+`
+
+type GetJobsParams struct {
+	Column1             *int32   `json:"column_1"`
+	Column2             []string `json:"column_2"`
+	Column3             []string `json:"column_3"`
+	Column4             []string `json:"column_4"`
+	AlreadyAppliedJobID []int32  `json:"already_applied_job_id"`
+}
+
+type GetJobsRow struct {
+	JobID       int32            `json:"job_id"`
+	JobRole     string           `json:"job_role"`
+	Ctc         float32          `json:"ctc"`
+	SalaryTier  string           `json:"salary_tier"`
+	ApplyByDate pgtype.Timestamp `json:"apply_by_date"`
+	CgpaCutoff  float32          `json:"cgpa_cutoff"`
+	CompanyName string           `json:"company_name"`
+	Industry    string           `json:"industry"`
+	CanApply    bool             `json:"can_apply"`
+}
+
+func (q *Queries) GetJobs(ctx context.Context, arg GetJobsParams) ([]*GetJobsRow, error) {
+	rows, err := q.db.Query(ctx, getJobs,
+		arg.Column1,
+		arg.Column2,
+		arg.Column3,
+		arg.Column4,
+		arg.AlreadyAppliedJobID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetJobsRow
+	for rows.Next() {
+		var i GetJobsRow
+		if err := rows.Scan(
+			&i.JobID,
+			&i.JobRole,
+			&i.Ctc,
+			&i.SalaryTier,
+			&i.ApplyByDate,
+			&i.CgpaCutoff,
+			&i.CompanyName,
+			&i.Industry,
+			&i.CanApply,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getStudentProfile = `-- name: GetStudentProfile :one
+SELECT name, usn, branch, cgpa, batch, num_active_backlogs, email_id, counsellor_email_id
+FROM student_table
+WHERE student_id = $1
+`
+
+type GetStudentProfileRow struct {
+	Name              string  `json:"name"`
+	Usn               string  `json:"usn"`
+	Branch            string  `json:"branch"`
+	Cgpa              float32 `json:"cgpa"`
+	Batch             int32   `json:"batch"`
+	NumActiveBacklogs int32   `json:"num_active_backlogs"`
+	EmailID           string  `json:"email_id"`
+	CounsellorEmailID string  `json:"counsellor_email_id"`
+}
+
+func (q *Queries) GetStudentProfile(ctx context.Context, studentID int32) (*GetStudentProfileRow, error) {
+	row := q.db.QueryRow(ctx, getStudentProfile, studentID)
+	var i GetStudentProfileRow
+	err := row.Scan(
+		&i.Name,
+		&i.Usn,
+		&i.Branch,
+		&i.Cgpa,
+		&i.Batch,
+		&i.NumActiveBacklogs,
+		&i.EmailID,
+		&i.CounsellorEmailID,
+	)
+	return &i, err
+}
+
 const performJobOfferAction = `-- name: PerformJobOfferAction :exec
 UPDATE student_offer_table SET action = $3, action_date = NOW() 
 WHERE student_id = $1
@@ -141,20 +313,5 @@ type PerformJobOfferActionParams struct {
 
 func (q *Queries) PerformJobOfferAction(ctx context.Context, arg PerformJobOfferActionParams) error {
 	_, err := q.db.Exec(ctx, performJobOfferAction, arg.StudentID, arg.JobID, arg.Action)
-	return err
-}
-
-const registerForJob = `-- name: RegisterForJob :exec
-INSERT INTO student_job_application_table(student_id, job_id, applied_on_date)
-VALUES($1, $2, NOW())
-`
-
-type RegisterForJobParams struct {
-	StudentID int32 `json:"student_id"`
-	JobID     int32 `json:"job_id"`
-}
-
-func (q *Queries) RegisterForJob(ctx context.Context, arg RegisterForJobParams) error {
-	_, err := q.db.Exec(ctx, registerForJob, arg.StudentID, arg.JobID)
 	return err
 }
