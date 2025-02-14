@@ -28,113 +28,151 @@
 <div class="alert alert-danger">{{ error }}</div>
 {% endif %}
 
-<!-- Student Profile Section -->
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="card-title">Your Profile</h5>
-                </div>
-                {% if profile %}
-                <div class="row">
-                    <div class="col-md-6">
-                        <p><strong>Name:</strong> {{ profile.name }}</p>
-                        <p><strong>USN:</strong> {{ profile.usn }}</p>
-                        <p><strong>Email:</strong> {{ profile.email }}</p>
-                        <p><strong>CGPA:</strong> {{ profile.cgpa }}</p>
-                    </div>
-                    <div class="col-md-6">
-                        <p><strong>Branch:</strong> {{ profile.branch }}</p>
-                        <p><strong>Batch:</strong> {{ profile.batch }}</p>
-                        <p><strong>Number of Backlogs:</strong> {{ profile.num_of_backlogs }}</p>
-                        <p><strong>Counsellor Email:</strong> {{ profile.counsellor_email_id }}</p>
-                    </div>
-                </div>
-                {% else %}
-                <div class="alert alert-warning">
-                    Profile information not available. Please contact support if this persists.
-                </div>
-                {% endif %}
+<!-- Profile Section -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Profile Information</h5>
+    </div>
+    <div class="card-body">
+        {% if profile %}
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Name:</strong> {{ profile.name }}</p>
+                <p><strong>USN:</strong> {{ profile.usn }}</p>
+                <p><strong>Branch:</strong> {{ profile.branch }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>CGPA:</strong> {{ profile.cgpa }}</p>
+                <p><strong>Batch:</strong> {{ profile.batch }}</p>
+                <p><strong>Email:</strong> {{ profile.email_id }}</p>
             </div>
         </div>
+        {% else %}
+        <p>No profile information available.</p>
+        {% endif %}
     </div>
 </div>
+
+<!-- Job Offers Section -->
+{% if job_offers %}
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">🎉 Job Offers</h5>
+    </div>
+    <div class="card-body">
+        {% for offer in job_offers %}
+        <div class="offer-card mb-3 p-3 border rounded">
+            <h6 class="text-primary">{{ offer.company_name }}</h6>
+            <p class="mb-2"><strong>{{ offer.job_role }}</strong></p>
+            <p class="mb-2">Package: ₹{{ offer.ctc }} LPA</p>
+            <p class="mb-2">Type: {{ offer.job_type }}</p>
+            <p class="mb-2">Tier: {{ offer.salary_tier }}</p>
+            <p class="mb-2">Respond by: {{ offer.act_by_date }}</p>
+            {% if not offer.action or offer.action == 'PENDING' %}
+            <div class="mt-2">
+                <form action="{{ url_for('accept_offer', job_id=offer.job_id) }}" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-success btn-sm">Accept Offer</button>
+                </form>
+                <form action="{{ url_for('reject_offer', job_id=offer.job_id) }}" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger btn-sm">Reject Offer</button>
+                </form>
+            </div>
+            {% else %}
+            <p class="mb-0 mt-2">
+                <span class="badge {% if offer.action == 'ACCEPTED' %}bg-success{% else %}bg-danger{% endif %}">
+                    {{ offer.action }}
+                </span>
+            </p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Applied Jobs Section -->
+{% if applied_jobs %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Applied Jobs</h5>
+    </div>
+    <div class="card-body">
+        {% for job in applied_jobs %}
+        <div class="job-card mb-3 p-3 border rounded">
+            <h6>{{ job.job_role }}</h6>
+            <p class="mb-2">Package: ₹{{ job.ctc }} LPA</p>
+            <p class="mb-2">Type: {{ job.job_type }}</p>
+            <p class="mb-2">Tier: {{ job.salary_tier }}</p>
+            <p class="mb-2">Apply by: {{ job.apply_by_date }}</p>
+            {% if job.status %}
+            <p class="mb-0">
+                <span class="badge {% if job.status == 'Accepted' %}bg-success{% elif job.status == 'Rejected' %}bg-danger{% else %}bg-warning{% endif %}">
+                    {{ job.status }}
+                </span>
+            </p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 
 <!-- Available Jobs Section -->
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Available Jobs</h5>
-                {% if jobs %}
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Company</th>
-                                <th>Role</th>
-                                <th>Industry</th>
-                                <th>Salary Tier</th>
-                                <th>CTC</th>
-                                <th>CGPA Cutoff</th>
-                                <th>Apply By</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for job in jobs %}
-                            <tr>
-                                <td>{{ job.company_name }}</td>
-                                <td>{{ job.job_role }}</td>
-                                <td>{{ job.industry }}</td>
-                                <td>{{ job.salary_tier }}</td>
-                                <td>{{ job.ctc }}</td>
-                                <td>{{ job.cgpa_cutoff }}</td>
-                                <td>{{ job.apply_by_date }}</td>
-                                <td>
-                                    {% if job.can_apply and not job.has_applied %}
-                                    <form action="{{ url_for('apply_job', job_id=job.job_id) }}" method="POST" class="d-inline">
-                                        <button type="submit" class="btn btn-primary btn-sm">Apply</button>
-                                    </form>
-                                    {% elif job.has_applied %}
-                                    <span class="badge bg-success">Applied</span>
-                                    {% else %}
-                                    <span class="badge bg-secondary">Not Eligible</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <div class="alert alert-info">
-                    No jobs available at the moment.
-                </div>
-                {% endif %}
-            </div>
+{% if jobs %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Available Jobs</h5>
+    </div>
+    <div class="card-body">
+        {% for job in jobs %}
+        <div class="job-card mb-3 p-3 border rounded">
+            <h6>{{ job.company_name }} - {{ job.job_role }}</h6>
+            <p class="mb-2">Package: ₹{{ job.ctc }} LPA</p>
+            <p class="mb-2">Tier: {{ job.salary_tier }}</p>
+            <p class="mb-2">Industry: {{ job.industry }}</p>
+            <p class="mb-2">Apply by: {{ job.apply_by_date }}</p>
+            <p class="mb-2">CGPA Cutoff: {{ job.cgpa_cutoff }}</p>
+            {% if job.can_apply %}
+            <form action="{{ url_for('apply_job', job_id=job.job_id) }}" method="POST" style="display: inline;">
+                <input type="hidden" name="job_id" value="{{ job.job_id }}">
+                <button type="submit" class="btn btn-primary btn-sm">Apply Now</button>
+            </form>
+            {% else %}
+            <button class="btn btn-secondary btn-sm" disabled>Not Eligible</button>
+            {% endif %}
         </div>
+        {% endfor %}
     </div>
 </div>
+{% endif %}
 
 <!-- Job Application Confirmation Modal -->
-<div class="modal fade" id="jobApplicationModal" tabindex="-1" aria-labelledby="jobApplicationModalLabel" aria-hidden="true">
+<div class="modal fade" id="jobApplicationModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="jobApplicationModalLabel">Confirm Application</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title">Confirm Application</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>Please confirm your profile details before applying:</p>
+                <div id="modalJobDetails" class="mb-3"></div>
                 <div id="profileSummary">
-                    <!-- Profile details will be populated by JavaScript -->
+                    {% if profile %}
+                    <p><strong>Your Profile:</strong></p>
+                    <ul>
+                        <li>CGPA: {{ profile.cgpa }}</li>
+                        <li>Branch: {{ profile.branch }}</li>
+                        <li>Batch: {{ profile.batch }}</li>
+                    </ul>
+                    {% endif %}
                 </div>
+                <p>Are you sure you want to apply for this position?</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="confirmApplication">Confirm & Apply</button>
+                <form id="applicationForm" method="POST">
+                    <button type="submit" class="btn btn-primary">Confirm Application</button>
+                </form>
             </div>
         </div>
     </div>
@@ -142,46 +180,40 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle job application confirmation
-    const jobForms = document.querySelectorAll('form[action^="/apply/"]');
-    const confirmBtn = document.getElementById('confirmApplication');
-    let activeForm = null;
+    // Show confetti for success messages
+    document.addEventListener('DOMContentLoaded', function() {
+        const flashMessages = document.querySelectorAll('.alert-success');
+        flashMessages.forEach(message => {
+            if (message.textContent.includes('🎉')) {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+        });
 
-    jobForms.forEach(form => {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            activeForm = form;
-            
-            // Check if profile is complete
-            {% if not profile %}
-                alert('Please complete your profile before applying for jobs.');
-                return;
-            {% endif %}
-            
-            // Populate profile summary
-            const profileSummary = document.getElementById('profileSummary');
-            profileSummary.innerHTML = `
-                <p><strong>Name:</strong> {{ profile.name }}</p>
-                <p><strong>USN:</strong> {{ profile.usn }}</p>
-                <p><strong>Email:</strong> {{ profile.email }}</p>
-                <p><strong>CGPA:</strong> {{ profile.cgpa }}</p>
-                <p><strong>Branch:</strong> {{ profile.branch }}</p>
-            `;
-
-            // Show confirmation modal
-            const modal = new bootstrap.Modal(document.getElementById('jobApplicationModal'));
-            modal.show();
+        // Add submit event listeners to all job application forms
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                console.log('Form submission:', {
+                    action: this.action,
+                    method: this.method,
+                    jobId: this.querySelector('input[name="job_id"]')?.value
+                });
+            });
         });
     });
 
-    // Handle confirmation
-    confirmBtn.addEventListener('click', function() {
-        if (activeForm) {
-            activeForm.submit();
-        }
-    });
-});
+    // Automatically hide flash messages after 5 seconds
+    setTimeout(function() {
+        const flashMessages = document.querySelectorAll('.alert');
+        flashMessages.forEach(message => {
+            const alert = new bootstrap.Alert(message);
+            alert.close();
+        });
+    }, 5000);
 </script>
 {% endblock %}

@@ -12,7 +12,7 @@
 
 {% if session.get('access_token') %}
     <div class="row">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Available Jobs</h5>
@@ -21,7 +21,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Your Applications</h5>
@@ -30,12 +30,21 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Profile</h5>
                     <p class="card-text">Update your profile and preferences.</p>
                     <a href="#" class="btn btn-primary">Edit Profile</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Resume Parser</h5>
+                    <p class="card-text">Get AI-powered insights on your resume.</p>
+                    <a href="{{ url_for('resume_matcher') }}" class="btn btn-primary">Parse Resume</a>
                 </div>
             </div>
         </div>

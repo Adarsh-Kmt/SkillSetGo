@@ -20,114 +20,384 @@
                 <div class="card-body">
                     <h5 class="card-title">Post New Job</h5>
                     <form id="job-post-form" action="{{ url_for('post_job') }}" method="POST">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <input type="text" class="form-control" id="job_role" name="job_role" placeholder="Job Role" required>
-                                    <label for="job_role">Job Role</label>
-                                </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="job_role" class="form-label">Job Role</label>
+                                <input type="text" class="form-control" id="job_role" name="job_role" required>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <input type="number" class="form-control" id="ctc" name="ctc" placeholder="CTC (LPA)" required>
-                                    <label for="ctc">CTC (LPA)</label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <select class="form-select" id="salary_tier" name="salary_tier" required>
-                                        <option value="">Select Salary Tier</option>
-                                        <option value="Dream">Dream</option>
-                                        <option value="Open Dream">Open Dream</option>
-                                        <option value="Mass Recruitment">Mass Recruitment</option>
-                                    </select>
-                                    <label for="salary_tier">Salary Tier</label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <input type="number" step="0.01" class="form-control" id="cgpa_cutoff" name="cgpa_cutoff" placeholder="CGPA Cutoff" required>
-                                    <label for="cgpa_cutoff">CGPA Cutoff</label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <input type="text" class="form-control" id="industry" name="industry" placeholder="Industry" required>
-                                    <label for="industry">Industry</label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <input type="datetime-local" class="form-control" id="apply_by_date" name="apply_by_date" required>
-                                    <label for="apply_by_date">Apply By Date</label>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <button type="submit" class="btn btn-primary">Post Job</button>
+                            <div class="col-md-6 mb-3">
+                                <label for="ctc" class="form-label">CTC (LPA)</label>
+                                <input type="number" step="0.1" class="form-control" id="ctc" name="ctc" required>
                             </div>
                         </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="job_type" class="form-label">Job Type</label>
+                                <select class="form-select" id="job_type" name="job_type" required>
+                                    <option value="Full Time">Full Time</option>
+                                    <option value="Internship">Internship</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="salary_tier" class="form-label">Salary Tier</label>
+                                <select class="form-select" id="salary_tier" name="salary_tier" required>
+                                    <option value="Dream">Dream</option>
+                                    <option value="Open Dream">Open Dream</option>
+                                    <option value="Mass Recruitment">Mass Recruitment</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Job Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="cgpa_cutoff" class="form-label">CGPA Cutoff</label>
+                                <input type="number" step="0.01" class="form-control" id="cgpa_cutoff" name="cgpa_cutoff" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="apply_by_date" class="form-label">Apply By Date</label>
+                                <input type="date" class="form-control" id="apply_by_date" name="apply_by_date" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Post Job</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Posted Jobs Section -->
+    <!-- Published Jobs Section -->
     <div class="row">
         <div class="col-md-12">
             <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Published Jobs</h5>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title">Your Posted Jobs</h5>
-                    <div id="company-jobs-container">
-                        <!-- Jobs will be loaded dynamically -->
-                        <div class="text-center">
-                            <div class="spinner-border" role="status">
-                                <span class="visually-hidden">Loading...</span>
+                    {% if jobs %}
+                    {% for job in jobs %}
+                    <div class="job-card mb-3 p-3 border rounded">
+                        <h5>{{ job.job_role }}</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-2"><strong>Package:</strong> ₹{{ job.ctc }} LPA</p>
+                                <p class="mb-2"><strong>Type:</strong> {{ job.job_type }}</p>
+                                <p class="mb-2"><strong>Tier:</strong> {{ job.salary_tier }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-2"><strong>CGPA Cutoff:</strong> {{ job.cgpa_cutoff }}</p>
+                                <p class="mb-2"><strong>Apply By:</strong> {{ job.apply_by_date }}</p>
+                                <p class="mb-2"><strong>Applications:</strong> {{ job.application_count|default(0) }}</p>
                             </div>
                         </div>
+                        <div class="mt-2">
+                            <button onclick="loadApplications({{ job.job_id }}, '{{ job.job_role }}')" class="btn btn-primary btn-sm">
+                                View Applicants <span class="badge bg-light text-dark ms-1">{{ job.application_count|default(0) }}</span>
+                            </button>
+                            <button onclick="viewOfferStatus({{ job.job_id }})" class="btn btn-info btn-sm">
+                                View Offer Status
+                            </button>
+                        </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Applicants Modal -->
-    <div class="modal fade" id="applicationsModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Job Applications</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="applications-container">
-                        <!-- Applications will be loaded dynamically -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Profile Modal -->
-    <div class="modal fade" id="profileModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Student Profile</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="profile-container">
-                        <!-- Profile will be loaded dynamically -->
-                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p class="text-muted mb-0">No jobs posted yet.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Applicants Modal -->
+<div class="modal fade" id="applicantsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Applicants for <span id="modalJobRole"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="applicantsTableContainer">
+                    <!-- Applicants table will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Applicant Profile Modal -->
+<div class="modal fade" id="applicantProfileModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Student Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="applicantProfileContainer">
+                <!-- Profile details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Offer Status Modal -->
+<div class="modal fade" id="offerStatusModal" tabindex="-1" aria-labelledby="offerStatusModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="offerStatusModalLabel">Job Offer Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="offerStatusTableContainer">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>USN</th>
+                                <th>Status</th>
+                                <th>Action Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="offerStatusTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+function loadApplications(jobId, jobRole) {
+    document.getElementById('modalJobRole').textContent = jobRole;
+    const container = document.getElementById('applicantsTableContainer');
+    container.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
+
+    fetch(`/company/job/${jobId}/applications`)
+        .then(response => {
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = '/company/login';
+                    return;
+                }
+                throw new Error('Failed to load applications');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const applications = data.applications || [];
+            
+            if (!applications || applications.length === 0) {
+                container.innerHTML = '<div class="alert alert-info">No applications found for this job.</div>';
+                return;
+            }
+
+            let tableHtml = `
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>USN</th>
+                                <th>Branch</th>
+                                <th>CGPA</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+            
+            applications.forEach(app => {
+                tableHtml += `
+                    <tr>
+                        <td>${app.name || 'N/A'}</td>
+                        <td>${app.usn || 'N/A'}</td>
+                        <td>${app.branch || 'N/A'}</td>
+                        <td>${app.cgpa || 'N/A'}</td>
+                        <td>
+                            <button onclick="viewProfile(${app.student_id})" class="btn btn-info btn-sm">View Profile</button>
+                            <button onclick="offerJob(${jobId}, ${app.student_id})" class="btn btn-success btn-sm">Offer Job</button>
+                        </td>
+                    </tr>`;
+            });
+            
+            tableHtml += '</tbody></table></div>';
+            container.innerHTML = tableHtml;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            container.innerHTML = '<div class="alert alert-danger">Failed to load applications</div>';
+        });
+
+    const modal = new bootstrap.Modal(document.getElementById('applicantsModal'));
+    modal.show();
+}
+
+function viewProfile(studentId) {
+    fetch(`/student/${studentId}/profile`)
+        .then(response => {
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = '/company/login';
+                    return;
+                }
+                throw new Error('Failed to load profile');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            const profile = data.profile || {};
+
+            // Update modal content with profile data
+            const container = document.getElementById('applicantProfileContainer');
+            container.innerHTML = `
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>${profile.name || 'N/A'}</h4>
+                            <p><strong>USN:</strong> ${profile.usn || 'N/A'}</p>
+                            <p><strong>Branch:</strong> ${profile.branch || 'N/A'}</p>
+                            <p><strong>CGPA:</strong> ${profile.cgpa || 'N/A'}</p>
+                            <p><strong>Batch:</strong> ${profile.batch || 'N/A'}</p>
+                            <p><strong>Email:</strong> ${profile.email_id || 'N/A'}</p>
+                            <p><strong>Counsellor Email:</strong> ${profile.counsellor_email_id || 'N/A'}</p>
+                            <p><strong>Backlogs:</strong> ${profile.num_active_backlogs || 'N/A'}</p>
+                        </div>
+                    </div>
+                </div>`;
+
+            // Show the modal
+            const modal = new bootstrap.Modal(document.getElementById('applicantProfileModal'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(error.message || 'Failed to load profile');
+        });
+}
+
+function offerJob(jobId, studentId) {
+    if (!confirm('Are you sure you want to offer this job to the student?')) {
+        return;
+    }
+
+    fetch(`/company/job/${jobId}/offer/${studentId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/company/login';
+                return;
+            }
+            return response.json().then(data => {
+                throw new Error(data.error || 'Failed to offer job');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        alert('Job offered successfully!');
+        loadApplications(jobId, document.getElementById('modalJobRole').textContent);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert(error.message || 'Failed to offer job');
+    });
+}
+
+function rejectApplication(jobId, studentId) {
+    if (!confirm('Are you sure you want to reject this application?')) {
+        return;
+    }
+
+    fetch(`/company/job/${jobId}/reject/${studentId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/company/login';
+                return;
+            }
+            return response.json().then(data => {
+                throw new Error(data.error || 'Failed to reject application');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        alert('Application rejected successfully!');
+        loadApplications(jobId, document.getElementById('modalJobRole').textContent);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert(error.message || 'Failed to reject application');
+    });
+}
+
+function viewOfferStatus(jobId) {
+    fetch(`/company/job/${jobId}/offer-status`)
+        .then(response => {
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = '/company/login';
+                    return;
+                }
+                throw new Error('Failed to load offer status');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            const offers = data.offers || [];
+            const tbody = document.getElementById('offerStatusTableBody');
+            tbody.innerHTML = '';
+
+            offers.forEach(offer => {
+                const row = document.createElement('tr');
+                const actionDate = new Date(offer.action_date).toLocaleString();
+                const statusClass = offer.action === 'accepted' ? 'text-success' : 'text-danger';
+                
+                row.innerHTML = `
+                    <td>${offer.name || 'N/A'}</td>
+                    <td>${offer.usn || 'N/A'}</td>
+                    <td class="${statusClass}">${offer.action || 'Pending'}</td>
+                    <td>${actionDate}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // Show the modal
+            const modal = new bootstrap.Modal(document.getElementById('offerStatusModal'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(error.message || 'Failed to load offer status');
+        });
+}
+</script>
 {% endblock %}
