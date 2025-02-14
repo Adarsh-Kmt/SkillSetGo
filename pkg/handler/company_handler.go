@@ -26,6 +26,7 @@ func (handler *CompanyHandler) MuxSetup(mux *mux.Router) *mux.Router {
 	mux.HandleFunc("/company/job", helper.MakeAuthorizedHandler(helper.MakeHttpHandlerFunc(handler.CreateJob), companyAdminRoleRequired)).Methods("POST")
 	mux.HandleFunc("/company/job/offer", helper.MakeAuthorizedHandler(helper.MakeHttpHandlerFunc(handler.OfferJob), companyAdminRoleRequired)).Methods("POST")
 	mux.HandleFunc("/company/job/{job-id}/applicants", helper.MakeAuthorizedHandler(helper.MakeHttpHandlerFunc(handler.GetJobApplicants), companyAdminRoleRequired)).Methods("GET")
+	mux.HandleFunc("/company/job/{job-id}/offer", helper.MakeAuthorizedHandler(helper.MakeHttpHandlerFunc(handler.GetOfferStatus), companyAdminRoleRequired)).Methods("GET")
 	return mux
 }
 
@@ -116,5 +117,31 @@ func (handler *CompanyHandler) GetJobApplicants(w http.ResponseWriter, r *http.R
 
 	helper.WriteJSON(w, http.StatusOK, map[string]any{"profiles": profiles})
 
+	return nil
+}
+
+func (handler *CompanyHandler) GetOfferStatus(w http.ResponseWriter, r *http.Request) *helper.HTTPError {
+
+	companyId, httpError := helper.ValidateAccessToken(r.Header.Get("Auth"))
+	if httpError != nil {
+		return httpError
+	}
+
+	vars := mux.Vars(r)
+
+	jobIdString := vars["job-id"]
+
+	jobId, err := strconv.Atoi(jobIdString)
+
+	if err != nil || jobId == 0 {
+		return &helper.HTTPError{StatusCode: 400, Error: "invalid job id"}
+	}
+
+	offers, httpError := handler.companyService.GetOfferStatus(companyId, jobId)
+	if httpError != nil {
+		return httpError
+	}
+
+	helper.WriteJSON(w, http.StatusOK, map[string]any{"offers": offers})
 	return nil
 }

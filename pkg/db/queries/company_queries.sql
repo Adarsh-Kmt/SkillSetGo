@@ -32,3 +32,12 @@ SELECT EXISTS(
     WHERE company_id = sqlc.arg(company_id)
     AND job_id = sqlc.arg(job_id)
 );
+
+-- name: GetOfferStatus :many
+SELECT s.student_id, usn, name, branch, j.job_id, j.job_role, action, action_date, act_by_date
+FROM student_offer_table as so
+JOIN student_table as s
+ON s.student_id = so.student_id
+JOIN job_table as j
+ON so.job_id = j.job_id
+WHERE so.job_id = sqlc.arg(job_id);
