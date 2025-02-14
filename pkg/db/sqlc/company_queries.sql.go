@@ -160,6 +160,58 @@ func (q *Queries) GetJobApplicants(ctx context.Context, jobID int32) ([]*GetJobA
 	return items, nil
 }
 
+const getOfferStatus = `-- name: GetOfferStatus :many
+SELECT s.student_id, usn, name, branch, j.job_id, j.job_role, action, action_date, act_by_date
+FROM student_offer_table as so
+JOIN student_table as s
+ON s.student_id = so.student_id
+JOIN job_table as j
+ON so.job_id = j.job_id
+WHERE so.job_id = $1
+`
+
+type GetOfferStatusRow struct {
+	StudentID  int32            `json:"student_id"`
+	Usn        string           `json:"usn"`
+	Name       string           `json:"name"`
+	Branch     string           `json:"branch"`
+	JobID      int32            `json:"job_id"`
+	JobRole    string           `json:"job_role"`
+	Action     string           `json:"action"`
+	ActionDate pgtype.Timestamp `json:"action_date"`
+	ActByDate  pgtype.Timestamp `json:"act_by_date"`
+}
+
+func (q *Queries) GetOfferStatus(ctx context.Context, jobID int32) ([]*GetOfferStatusRow, error) {
+	rows, err := q.db.Query(ctx, getOfferStatus, jobID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetOfferStatusRow
+	for rows.Next() {
+		var i GetOfferStatusRow
+		if err := rows.Scan(
+			&i.StudentID,
+			&i.Usn,
+			&i.Name,
+			&i.Branch,
+			&i.JobID,
+			&i.JobRole,
+			&i.Action,
+			&i.ActionDate,
+			&i.ActByDate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getPublishedJobs = `-- name: GetPublishedJobs :many
 SELECT job_id, job_role, job_type, ctc, salary_tier, apply_by_date, cgpa_cutoff, eligible_batch, eligible_branches
 FROM job_table
