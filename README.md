@@ -149,4 +149,4 @@ This project is licensed under the MIT License.
 
 ## 📞 Support
 
-For issues or questions, please open a GitHub issue or contact support@skillsetgo.com
+For issues or questions, please open a GitHub issue or contact bollasainagay.is22@rvce.edu.in/adarshkamath.is22@rvce.edu.in/aneeshsgrandhi.is22@rvce.edu.in
