@@ -8,10 +8,23 @@
         <div class="card">
             <div class="card-body">
                 <h3 class="card-title text-center mb-4">Student Login</h3>
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
                 {% if error %}
                 <div class="alert alert-danger">{{ error }}</div>
                 {% endif %}
-                <form method="POST" action="{{ url_for('login') }}">
+
+                <form method="POST" action="{{ url_for('login') }}" id="loginForm">
                     <div class="mb-3">
                         <label for="usn" class="form-label">USN</label>
                         <input type="text" class="form-control" id="usn" name="usn" required pattern="1RV.*" title="USN must start with 1RV">
@@ -22,7 +35,7 @@
                         <input type="password" class="form-control" id="password" name="password" required>
                     </div>
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">Login</button>
+                        <button type="submit" class="btn btn-primary" id="loginButton">Login</button>
                     </div>
                 </form>
                 <div class="text-center mt-3">
@@ -32,4 +45,28 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    const usn = document.getElementById('usn').value.trim();
+    const password = document.getElementById('password').value.trim();
+    
+    if (!usn || !password) {
+        e.preventDefault();
+        alert('Please fill in all fields');
+        return;
+    }
+    
+    if (!usn.startsWith('1RV')) {
+        e.preventDefault();
+        alert('USN must start with 1RV');
+        return;
+    }
+    
+    // Disable the submit button to prevent double submission
+    document.getElementById('loginButton').disabled = true;
+});
+</script>
 {% endblock %}
