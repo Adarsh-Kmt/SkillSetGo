@@ -1,7 +1,7 @@
 package entity
 
 import (
-	"github.com/adarsh-kmt/skillsetgo/pkg/util"
+	"github.com/adarsh-kmt/skillsetgo/pkg/helper"
 )
 
 type RegisterCompanyRequest struct {
@@ -13,18 +13,18 @@ type RegisterCompanyRequest struct {
 	Password    string `json:"password"`
 }
 
-func ValidateRegisterCompanyRequest(request RegisterCompanyRequest) (httpError *util.HTTPError) {
+func ValidateRegisterCompanyRequest(request RegisterCompanyRequest) (httpError *helper.HTTPError) {
 	if request.CompanyName == "" {
-		return &util.HTTPError{StatusCode: 400, Error: "Company Name cannot be empty"}
+		return &helper.HTTPError{StatusCode: 400, Error: "Company Name cannot be empty"}
 	}
 	if request.PocName == "" {
-		return &util.HTTPError{StatusCode: 400, Error: "Point of Contact Name cannot be empty"}
+		return &helper.HTTPError{StatusCode: 400, Error: "Point of Contact Name cannot be empty"}
 	}
 	if request.PocPhno == "" || len(request.PocPhno) != 10 {
-		return &util.HTTPError{StatusCode: 400, Error: "Invalid Phone Number"}
+		return &helper.HTTPError{StatusCode: 400, Error: "Invalid Phone Number"}
 	}
 	if request.Industry == "" {
-		return &util.HTTPError{StatusCode: 400, Error: "Industry cannot be empty"}
+		return &helper.HTTPError{StatusCode: 400, Error: "Industry cannot be empty"}
 	}
 	return nil
 }

@@ -3,7 +3,7 @@ package entity
 import (
 	"strings"
 
-	"github.com/adarsh-kmt/skillsetgo/pkg/util"
+	"github.com/adarsh-kmt/skillsetgo/pkg/helper"
 )
 
 type LoginStudentRequest struct {
@@ -28,7 +28,7 @@ type LoginCompanyRequest struct {
 	Password string `json:"password"`
 }
 
-func ValidateLoginStudentRequest(request LoginStudentRequest) *util.HTTPError {
+func ValidateLoginStudentRequest(request LoginStudentRequest) *helper.HTTPError {
 	errorMap := make(map[string]any)
 
 	if request.USN == "" {
@@ -39,12 +39,12 @@ func ValidateLoginStudentRequest(request LoginStudentRequest) *util.HTTPError {
 	}
 
 	if len(errorMap) > 0 {
-		return &util.HTTPError{Error: errorMap, StatusCode: 400}
+		return &helper.HTTPError{Error: errorMap, StatusCode: 400}
 	}
 	return nil
 }
 
-func ValidateLoginCompanyRequest(request LoginCompanyRequest) *util.HTTPError {
+func ValidateLoginCompanyRequest(request LoginCompanyRequest) *helper.HTTPError {
 	errorMap := make(map[string]any)
 
 	if request.Username == "" {
@@ -55,12 +55,12 @@ func ValidateLoginCompanyRequest(request LoginCompanyRequest) *util.HTTPError {
 	}
 
 	if len(errorMap) > 0 {
-		return &util.HTTPError{Error: errorMap, StatusCode: 400}
+		return &helper.HTTPError{Error: errorMap, StatusCode: 400}
 	}
 	return nil
 }
 
-func ValidateRegisterStudentRequest(request RegisterStudentRequest) (httpError *util.HTTPError) {
+func ValidateRegisterStudentRequest(request RegisterStudentRequest) (httpError *helper.HTTPError) {
 
 	branchemail := map[string]string{
 		"ISE":  ".is",
@@ -80,33 +80,33 @@ func ValidateRegisterStudentRequest(request RegisterStudentRequest) (httpError *
 		"ASE":  ".ae",
 	}
 	if request.Name == "" {
-		return &util.HTTPError{StatusCode: 400, Error: "Name cannot be empty"}
+		return &helper.HTTPError{StatusCode: 400, Error: "Name cannot be empty"}
 	}
 	if request.Password == "" {
-		return &util.HTTPError{StatusCode: 400, Error: "Password cannot be empty"}
+		return &helper.HTTPError{StatusCode: 400, Error: "Password cannot be empty"}
 	}
 	if !strings.HasPrefix(request.Usn, "1RV") {
-		return &util.HTTPError{StatusCode: 400, Error: "Invalid USN"}
+		return &helper.HTTPError{StatusCode: 400, Error: "Invalid USN"}
 	}
 	substr, exists := branchemail[request.Branch]
 	if request.Branch == "" || !exists {
-		return &util.HTTPError{StatusCode: 400, Error: "Branch is empty or invalid"}
+		return &helper.HTTPError{StatusCode: 400, Error: "Branch is empty or invalid"}
 	}
 	if request.Cgpa <= 0 || request.Cgpa > 10 {
-		return &util.HTTPError{StatusCode: 400, Error: "Invalid CGPA"}
+		return &helper.HTTPError{StatusCode: 400, Error: "Invalid CGPA"}
 	}
 	email := strings.TrimSpace(request.Email)
 	if !strings.HasSuffix(strings.ToLower(email), "@rvce.edu.in") {
-		return &util.HTTPError{StatusCode: 400, Error: "Invalid Email ID"}
+		return &helper.HTTPError{StatusCode: 400, Error: "Invalid Email ID"}
 	}
 	if !strings.Contains(request.Email, substr) {
-		return &util.HTTPError{StatusCode: 400, Error: "Email ID does not match branch"}
+		return &helper.HTTPError{StatusCode: 400, Error: "Email ID does not match branch"}
 	}
 	if request.Batch < 2026 {
-		return &util.HTTPError{StatusCode: 400, Error: "invalid batch"}
+		return &helper.HTTPError{StatusCode: 400, Error: "invalid batch"}
 	}
 	if request.CounsellorEmailID == "" {
-		return &util.HTTPError{StatusCode: 400, Error: "Counsellor Email ID cannot be empty"}
+		return &helper.HTTPError{StatusCode: 400, Error: "Counsellor Email ID cannot be empty"}
 	}
 	return nil
 }

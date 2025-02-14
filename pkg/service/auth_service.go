@@ -8,15 +8,15 @@ import (
 	db "github.com/adarsh-kmt/skillsetgo/pkg/db/config"
 	"github.com/adarsh-kmt/skillsetgo/pkg/db/sqlc"
 	"github.com/adarsh-kmt/skillsetgo/pkg/entity"
-	"github.com/adarsh-kmt/skillsetgo/pkg/util"
+	"github.com/adarsh-kmt/skillsetgo/pkg/helper"
 	"github.com/jackc/pgx/v5"
 )
 
 type AuthService interface {
-	LoginStudent(request *entity.LoginStudentRequest) (accessToken string, httpError *util.HTTPError)
-	LoginCompany(request *entity.LoginCompanyRequest) (accessToken string, httpError *util.HTTPError)
-	RegisterStudent(request *entity.RegisterStudentRequest) (httpError *util.HTTPError)
-	RegisterCompany(request *entity.RegisterCompanyRequest) (httpError *util.HTTPError)
+	LoginStudent(request *entity.LoginStudentRequest) (accessToken string, httpError *helper.HTTPError)
+	LoginCompany(request *entity.LoginCompanyRequest) (accessToken string, httpError *helper.HTTPError)
+	RegisterStudent(request *entity.RegisterStudentRequest) (httpError *helper.HTTPError)
+	RegisterCompany(request *entity.RegisterCompanyRequest) (httpError *helper.HTTPError)
 }
 
 type AuthServiceImpl struct {
@@ -25,7 +25,7 @@ type AuthServiceImpl struct {
 func NewAuthServiceImpl() *AuthServiceImpl {
 	return &AuthServiceImpl{}
 }
-func (as *AuthServiceImpl) LoginStudent(request *entity.LoginStudentRequest) (accessToken string, httpError *util.HTTPError) {
+func (as *AuthServiceImpl) LoginStudent(request *entity.LoginStudentRequest) (accessToken string, httpError *helper.HTTPError) {
 	params := sqlc.AuthenticateStudentParams{
 		Usn:      request.USN,
 		Password: request.Password,
@@ -33,18 +33,18 @@ func (as *AuthServiceImpl) LoginStudent(request *entity.LoginStudentRequest) (ac
 	studentId, err := db.Client.AuthenticateStudent(context.TODO(), params)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return "", &util.HTTPError{StatusCode: 401, Error: "invalid username or password"}
+			return "", &helper.HTTPError{StatusCode: 401, Error: "invalid username or password"}
 		} else {
-			return "", &util.HTTPError{StatusCode: 500, Error: "internal server error"}
+			return "", &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
 		}
 	}
 
-	accessToken, httpError = util.IssueToken(studentId)
+	accessToken, httpError = helper.IssueToken(studentId, []string{"student"})
 
 	return accessToken, httpError
 }
 
-func (as *AuthServiceImpl) LoginCompany(request *entity.LoginCompanyRequest) (accessToken string, httpError *util.HTTPError) {
+func (as *AuthServiceImpl) LoginCompany(request *entity.LoginCompanyRequest) (accessToken string, httpError *helper.HTTPError) {
 	params := sqlc.AuthenticateCompanyParams{
 		Username: request.Username,
 		Password: request.Password,
@@ -52,18 +52,18 @@ func (as *AuthServiceImpl) LoginCompany(request *entity.LoginCompanyRequest) (ac
 	companyId, err := db.Client.AuthenticateCompany(context.TODO(), params)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return "", &util.HTTPError{StatusCode: 401, Error: "invalid username or password"}
+			return "", &helper.HTTPError{StatusCode: 401, Error: "invalid username or password"}
 		} else {
-			return "", &util.HTTPError{StatusCode: 500, Error: "internal server error"}
+			return "", &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
 		}
 	}
 
-	accessToken, httpError = util.IssueToken(companyId)
+	accessToken, httpError = helper.IssueToken(companyId, []string{"company admin"})
 
 	return accessToken, httpError
 }
 
-func (as *AuthServiceImpl) RegisterStudent(request *entity.RegisterStudentRequest) (httpError *util.HTTPError) {
+func (as *AuthServiceImpl) RegisterStudent(request *entity.RegisterStudentRequest) (httpError *helper.HTTPError) {
 
 	var (
 		err error
@@ -71,9 +71,9 @@ func (as *AuthServiceImpl) RegisterStudent(request *entity.RegisterStudentReques
 
 	if exists, err := db.Client.CheckIfStudentExists(context.TODO(), request.Usn); err != nil {
 
-		return &util.HTTPError{StatusCode: 500, Error: "internal server error"}
+		return &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
 	} else if exists {
-		return &util.HTTPError{StatusCode: 404, Error: "student already registered"}
+		return &helper.HTTPError{StatusCode: 404, Error: "student already registered"}
 	}
 	params := sqlc.InsertUserParams{
 		Usn:               request.Usn,
@@ -89,12 +89,12 @@ func (as *AuthServiceImpl) RegisterStudent(request *entity.RegisterStudentReques
 
 	if err = db.Client.InsertUser(context.TODO(), params); err != nil {
 		log.Println(err.Error())
-		return &util.HTTPError{StatusCode: 500, Error: "internal server error"}
+		return &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
 	}
 	return nil
 }
 
-func (as *AuthServiceImpl) RegisterCompany(request *entity.RegisterCompanyRequest) (httpError *util.HTTPError) {
+func (as *AuthServiceImpl) RegisterCompany(request *entity.RegisterCompanyRequest) (httpError *helper.HTTPError) {
 
 	var (
 		err error
@@ -102,9 +102,9 @@ func (as *AuthServiceImpl) RegisterCompany(request *entity.RegisterCompanyReques
 
 	if exists, err := db.Client.CheckIfCompanyExists(context.TODO(), request.CompanyName); err != nil {
 
-		return &util.HTTPError{StatusCode: 500, Error: "internal server error"}
+		return &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
 	} else if exists {
-		return &util.HTTPError{StatusCode: 404, Error: "company already registered"}
+		return &helper.HTTPError{StatusCode: 404, Error: "company already registered"}
 	}
 	params := sqlc.CreateCompanyParams{
 		CompanyName: request.CompanyName,
@@ -116,7 +116,7 @@ func (as *AuthServiceImpl) RegisterCompany(request *entity.RegisterCompanyReques
 	}
 
 	if err = db.Client.CreateCompany(context.TODO(), params); err != nil {
-		return &util.HTTPError{StatusCode: 500, Error: "internal server error"}
+		return &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
 	}
 	return nil
 }

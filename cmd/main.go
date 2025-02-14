@@ -19,12 +19,12 @@ func main() {
 	}
 
 	// Initialize services
-	jobService := service.NewJobServiceImpl()
+	companyService := service.NewCompanyServiceImpl()
 	studentService := service.NewStudentServiceImpl()
 	authService := service.NewAuthServiceImpl()
 
 	// Initialize handlers
-	jobHandler := handler.NewJobHandler(jobService)
+	companyHandler := handler.NewCompanyHandler(companyService)
 	studentHandler := handler.NewStudentHandler(studentService)
 	authHandler := handler.NewAuthHandler(authService)
 
@@ -35,7 +35,7 @@ func main() {
 	router.Use(middleware.CorsMiddleware)
 
 	// Setup routes
-	router = jobHandler.MuxSetup(router)
+	router = companyHandler.MuxSetup(router)
 	router = studentHandler.MuxSetup(router)
 	router = authHandler.MuxSetup(router)
 
