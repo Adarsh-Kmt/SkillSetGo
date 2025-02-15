@@ -603,6 +603,68 @@ def get_job_applications(job_id):
         print(f"Error fetching applications: {str(e)}")
         return jsonify({'error': 'An error occurred'}), 500
 
+
+@app.route('/company/job/<int:job_id>/interview/<int:student_id>', methods=['POST'])
+def offer_interview(job_id, student_id):
+    try:
+        if 'company_access_token' not in session:
+            return jsonify({'error': 'Please log in first'}), 401
+        
+        headers = {
+            'Auth': session['company_access_token'],
+            'Content-Type': 'application/json'
+        }
+
+        # Parse request JSON safely
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Invalid JSON data'}), 400
+
+        interview_date = data.get('interview_date')
+        if not interview_date:
+            return jsonify({'error': 'Missing interview_date'}), 400
+
+        # Append ":00" if seconds are missing
+        if len(interview_date) == 16:
+            interview_date += ":00"
+
+        try:
+            dt_obj = datetime.strptime(interview_date, "%Y-%m-%dT%H:%M:%S")
+            formatted_datetime = dt_obj.strftime("%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            return jsonify({'error': 'Invalid interview_date format'}), 400
+
+        # Payload for backend
+        payload = {
+            'job_id': int(job_id),
+            'student_id': int(student_id),
+            'venue': data.get('venue'),
+            'interview_round': "1",
+            'interview_date': formatted_datetime
+        }
+
+        print("Sending payload:", payload)  # Debugging
+
+        # Send request
+        response = requests.post(f"{API_URL}/company/job/interview", headers=headers, json=payload)
+        print(f"Offer interview response: {response.status_code}, {response.text}")
+
+        # Handle API response
+        if response.status_code == 401:
+            session.clear()
+            return jsonify({'error': 'Session expired'}), 401
+        if response.status_code == 404:
+            return jsonify({'error': 'Venue is booked'}), 404
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to offer interview'}), response.status_code
+
+        return jsonify({'message': 'Interview scheduled successfully'})
+
+    except Exception as e:
+        print(f"Error offering interview: {str(e)}")
+        return jsonify({'error': 'An unexpected error occurred'}), 500
+
+
 @app.route('/company/job/<int:job_id>/offer/<int:student_id>', methods=['POST'])
 def offer_job(job_id, student_id):
     try:
@@ -632,6 +694,8 @@ def offer_job(job_id, student_id):
         if response.status_code == 401:
             session.clear()
             return jsonify({'error': 'Session expired'}), 401
+        if response.status_code == 404:
+            return jsonify({'error': 'Student already given offer'}), 404
             
         if response.status_code != 200:
             return jsonify({'error': 'Failed to offer job'}), response.status_code
@@ -793,6 +857,7 @@ def get_company_jobs():
     except Exception as e:
         print(f"Error getting company jobs: {str(e)}")
         return jsonify({'error': 'An unexpected error occurred'}), 500
+
 
 @app.route('/student/job-offers')
 def get_student_job_offers():
@@ -1053,6 +1118,37 @@ def get_offer_status(job_id):
         print(f"Error getting offer status: {str(e)}")
         return jsonify({'error': 'An unexpected error occurred'}), 500
 
+@app.route('/company/job/<int:job_id>/interview')
+def get_interview_status(job_id):
+    try:
+        if 'company_access_token' not in session:
+            return jsonify({'error': 'Please log in first'}), 401
+            
+        headers = {
+            'Auth': session['company_access_token']
+        }
+            
+        # Get offer status from API - note the job-id format to match Go backend
+        response = requests.get(
+            f"{API_URL}/company/job/{job_id}/interview",
+            headers=headers
+        )
+        print(f"Get offer status response for job {job_id}:", response.status_code, response.text)
+        
+        if response.status_code == 401:
+            session.clear()
+            return jsonify({'error': 'Session expired'}), 401
+        if response.status_code==403:
+            return jsonify({'error':'Company job not created'}),403
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to get interview status'}), response.status_code
+            
+        return response.json()
+        
+    except Exception as e:
+        print(f"Error getting interview status: {str(e)}")
+        return jsonify({'error': 'An unexpected error occurred'}), 500
+    
 @app.route('/resume-matcher')
 def resume_matcher():
     if 'access_token' not in session:
