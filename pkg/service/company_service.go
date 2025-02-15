@@ -145,6 +145,47 @@ func (service *CompanyServiceImpl) GetOfferStatus(companyId int, jobId int) (off
 	return rows, nil
 }
 
+func (service *CompanyServiceImpl) ScheduleInterview(companyId int, request entity.ScheduleInterviewRequest) (httpError *helper.HTTPError) {
+
+	checkParams := sqlc.CheckIfCompanyCreatedJobParams{CompanyID: int32(companyId), JobID: int32(request.JobId)}
+
+	wasCreated, err := db.Client.CheckIfCompanyCreatedJob(context.TODO(), checkParams)
+
+	if err != nil {
+		return &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
+	}
+
+	if !wasCreated {
+		return &helper.HTTPError{StatusCode: 403, Error: "company did not publish job"}
+	}
+
+	interviewDate, _ := time.Parse("2006-01-02 15:04:05", request.InterviewDate)
+	venueCheckParams := sqlc.CheckIfVenueBeingUsedAtParticularTimeParams{
+		Venue:                        request.Venue,
+		DateOfInterviewToBeScheduled: pgtype.Timestamp{Time: interviewDate, Valid: true},
+	}
+	exists, err := db.Client.CheckIfVenueBeingUsedAtParticularTime(context.TODO(), venueCheckParams)
+
+	if err != nil {
+		return &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
+	}
+	if exists {
+		return &helper.HTTPError{StatusCode: 404, Error: "venue already in use, schedule for another time"}
+	}
+
+	params := sqlc.ScheduleInterviewParams{
+		StudentID:     int32(request.StudentId),
+		JobID:         int32(request.JobId),
+		Venue:         request.Venue,
+		InterviewDate: pgtype.Timestamp{Time: interviewDate, Valid: true},
+	}
+
+	if err := db.Client.ScheduleInterview(context.TODO(), params); err != nil {
+		return &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
+	}
+
+	return nil
+}
 func (service *CompanyServiceImpl) GetScheduledInterviews(companyId int, jobId int) (interviews []*sqlc.GetInterviewsScheduledByCompanyRow, httpError *helper.HTTPError) {
 
 	checkParams := sqlc.CheckIfCompanyCreatedJobParams{CompanyID: int32(companyId), JobID: int32(jobId)}
