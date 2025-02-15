@@ -50,20 +50,12 @@ JOIN job_table as j
 ON so.job_id = j.job_id
 WHERE so.job_id = sqlc.arg(job_id);
 
--- name: CheckIfInterviewExists :one
-SELECT EXISTS(
-    SELECT student_id
-    FROM student_job_interview_table
-    WHERE student_id = sqlc.arg(student_id)
-    AND job_id = sqlc.arg(job_id)
-    AND interview_round = sqlc.arg(interview_round)
-);
 
--- name: UpdateInterviewResult :exec
-UPDATE student_job_interview_table SET result = sqlc.arg(result)
-WHERE student_id = sqlc.arg(student_id)
-AND job_id = sqlc.arg(job_id)
-AND interview_round = sqlc.arg(interview_round);
+
+-- -- name: UpdateInterviewResult :exec
+-- UPDATE student_job_interview_table SET result = sqlc.arg(result)
+-- WHERE student_id = sqlc.arg(student_id)
+-- AND job_id = sqlc.arg(job_id);
 
 -- name: GetInterviewsScheduledForStudent :many
 SELECT sj.job_id, job_role, job_type, ctc, company_name, venue, interview_date
@@ -102,3 +94,13 @@ ON so.job_id = j.job_id
 JOIN student_table as s
 ON so.student_id = s.student_id
 GROUP BY branch;
+
+-- name: CheckIfInterviewScheduledAlready :one
+SELECT EXISTS(
+    SELECT student_id
+    from student_job_interview_table
+    WHERE student_id = sqlc.arg(student_id)
+    AND job_id = sqlc.arg(job_id)
+    AND interview_date = sqlc.arg(interview_date)
+    AND venue = sqlc.arg(venue)
+);

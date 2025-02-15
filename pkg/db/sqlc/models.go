@@ -39,12 +39,10 @@ type StudentJobApplicationTable struct {
 }
 
 type StudentJobInterviewTable struct {
-	StudentID      int32            `json:"student_id"`
-	JobID          int32            `json:"job_id"`
-	Venue          string           `json:"venue"`
-	InterviewDate  pgtype.Timestamp `json:"interview_date"`
-	InterviewRound int32            `json:"interview_round"`
-	Result         string           `json:"result"`
+	StudentID     int32            `json:"student_id"`
+	JobID         int32            `json:"job_id"`
+	Venue         string           `json:"venue"`
+	InterviewDate pgtype.Timestamp `json:"interview_date"`
 }
 
 type StudentOfferTable struct {

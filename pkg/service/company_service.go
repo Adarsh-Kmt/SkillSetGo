@@ -164,11 +164,28 @@ func (service *CompanyServiceImpl) ScheduleInterview(companyId int, request enti
 
 	interviewDate, _ := time.Parse("2006-01-02 15:04:05", request.InterviewDate)
 
+	existsCheckParams := sqlc.CheckIfInterviewScheduledAlreadyParams{
+		StudentID:     int32(request.StudentId),
+		JobID:         int32(request.JobId),
+		InterviewDate: pgtype.Timestamp{Time: interviewDate, Valid: true},
+		Venue:         request.Venue,
+	}
+
+	exists, err := db.Client.CheckIfInterviewScheduledAlready(context.TODO(), existsCheckParams)
+
+	if err != nil {
+		return &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
+	}
+
+	if exists {
+		return &helper.HTTPError{StatusCode: 404, Error: "interview scheduled already"}
+	}
+
 	venueCheckParams := sqlc.CheckIfVenueBeingUsedAtParticularTimeParams{
 		Venue:                        request.Venue,
 		DateOfInterviewToBeScheduled: pgtype.Timestamp{Time: interviewDate, Valid: true},
 	}
-	exists, err := db.Client.CheckIfVenueBeingUsedAtParticularTime(context.TODO(), venueCheckParams)
+	exists, err = db.Client.CheckIfVenueBeingUsedAtParticularTime(context.TODO(), venueCheckParams)
 
 	if err != nil {
 		slog.Error(fmt.Sprintf("check venue error: %s", err.Error()))

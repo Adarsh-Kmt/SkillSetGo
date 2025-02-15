@@ -79,3 +79,4 @@ FROM job_table as j
 JOIN student_offer_table as so
 ON j.job_id = so.job_id
 WHERE so.student_id = sqlc.arg(student_id);
+

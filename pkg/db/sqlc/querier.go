@@ -18,7 +18,7 @@ type Querier interface {
 	CheckIfAppliedForJobAlready(ctx context.Context, arg CheckIfAppliedForJobAlreadyParams) (bool, error)
 	CheckIfCompanyCreatedJob(ctx context.Context, arg CheckIfCompanyCreatedJobParams) (bool, error)
 	CheckIfCompanyExists(ctx context.Context, companyName string) (bool, error)
-	CheckIfInterviewExists(ctx context.Context, arg CheckIfInterviewExistsParams) (bool, error)
+	CheckIfInterviewScheduledAlready(ctx context.Context, arg CheckIfInterviewScheduledAlreadyParams) (bool, error)
 	CheckIfOfferedAlready(ctx context.Context, arg CheckIfOfferedAlreadyParams) (bool, error)
 	CheckIfStudentExists(ctx context.Context, usn string) (bool, error)
 	CheckIfVenueBeingUsedAtParticularTime(ctx context.Context, arg CheckIfVenueBeingUsedAtParticularTimeParams) (bool, error)
@@ -28,6 +28,10 @@ type Querier interface {
 	GetAlreadyAppliedJobs(ctx context.Context, studentID int32) ([]*GetAlreadyAppliedJobsRow, error)
 	GetEligibleStudents(ctx context.Context, jobID int32) ([]*GetEligibleStudentsRow, error)
 	GetInterviewsScheduledByCompany(ctx context.Context, jobID int32) ([]*GetInterviewsScheduledByCompanyRow, error)
+	// -- name: UpdateInterviewResult :exec
+	// UPDATE student_job_interview_table SET result = sqlc.arg(result)
+	// WHERE student_id = sqlc.arg(student_id)
+	// AND job_id = sqlc.arg(job_id);
 	GetInterviewsScheduledForStudent(ctx context.Context, studentID int32) ([]*GetInterviewsScheduledForStudentRow, error)
 	GetJobApplicants(ctx context.Context, jobID int32) ([]*GetJobApplicantsRow, error)
 	GetJobOfferActByDate(ctx context.Context, arg GetJobOfferActByDateParams) (pgtype.Timestamp, error)
@@ -42,7 +46,6 @@ type Querier interface {
 	OfferJob(ctx context.Context, arg OfferJobParams) error
 	PerformJobOfferAction(ctx context.Context, arg PerformJobOfferActionParams) error
 	ScheduleInterview(ctx context.Context, arg ScheduleInterviewParams) error
-	UpdateInterviewResult(ctx context.Context, arg UpdateInterviewResultParams) error
 }
 
 var _ Querier = (*Queries)(nil)
