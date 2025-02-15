@@ -639,7 +639,6 @@ def offer_interview(job_id, student_id):
             'job_id': int(job_id),
             'student_id': int(student_id),
             'venue': data.get('venue'),
-            'interview_round': "1",
             'interview_date': formatted_datetime
         }
 

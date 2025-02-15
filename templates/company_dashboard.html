@@ -309,7 +309,6 @@ function viewInterviewStatus(jobId) {
                                 <th>USN</th>
                                 <th>Interview Date</th>
                                 <th>Venue</th>
-                                <th>Round</th>
                             </tr>
                         </thead>
                         <tbody>`;
@@ -322,7 +321,6 @@ function viewInterviewStatus(jobId) {
                             <td>${interview.usn || 'N/A'}</td>
                             <td>${interviewDate}</td>
                             <td>${interview.venue || 'N/A'}</td>
-                            <td>${interview.round || 'N/A'}</td>
                         </tr>`;
                 });
                 
