@@ -63,7 +63,9 @@ func (sh *StudentHandler) GetJobs(w http.ResponseWriter, r *http.Request) (httpE
 	if jobs, httpError = sh.studentService.GetJobs(userId, salaryTierList, jobRoleList, companyList); httpError != nil {
 		return httpError
 	}
-
+	if jobs == nil {
+		return &helper.HTTPError{StatusCode: 404, Error: "no jobs found"}
+	}
 	helper.WriteJSON(w, http.StatusOK, map[string]any{"jobs": jobs})
 	return nil
 }
@@ -144,25 +146,25 @@ func (sh *StudentHandler) PerformJobOfferAction(w http.ResponseWriter, r *http.R
 }
 
 func (sh *StudentHandler) GetStudentProfile(w http.ResponseWriter, r *http.Request) (httpError *helper.HTTPError) {
-    vars := mux.Vars(r)
-    studentIdStr := vars["student-id"]
+	vars := mux.Vars(r)
+	studentIdStr := vars["student-id"]
 
-    if studentIdStr == "" {
-        return &helper.HTTPError{StatusCode: 400, Error: "invalid student id"}
-    }
+	if studentIdStr == "" {
+		return &helper.HTTPError{StatusCode: 400, Error: "invalid student id"}
+	}
 
-    studentId, err := strconv.Atoi(studentIdStr)
-    if err != nil {
-        return &helper.HTTPError{StatusCode: 400, Error: "invalid student id format"}
-    }
+	studentId, err := strconv.Atoi(studentIdStr)
+	if err != nil {
+		return &helper.HTTPError{StatusCode: 400, Error: "invalid student id format"}
+	}
 
-    profile, httpError := sh.studentService.GetStudentProfile(studentId)
-    if httpError != nil {
-        return httpError
-    }
+	profile, httpError := sh.studentService.GetStudentProfile(studentId)
+	if httpError != nil {
+		return httpError
+	}
 
-    helper.WriteJSON(w, 200, map[string]any{"profile": profile})
-    return nil
+	helper.WriteJSON(w, 200, map[string]any{"profile": profile})
+	return nil
 }
 
 func (sh *StudentHandler) GetAlreadyAppliedJobs(w http.ResponseWriter, r *http.Request) (httpError *helper.HTTPError) {

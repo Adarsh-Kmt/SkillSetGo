@@ -38,18 +38,60 @@ func (service *StudentServiceImpl) GetJobs(studentId int, salaryTierFilter []str
 	var (
 		err                     error
 		alreadyAppliedJobIdList []int32
+		offeredJobList          []*sqlc.GetOfferedJobInfoRow
 	)
+
+	offeredJobList, err = db.Client.GetOfferedJobInfo(context.TODO(), int32(studentId))
+
+	if err != nil {
+		return nil, &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
+	}
+
+	hasInternship := false
+	hasOpenDreamOffer := false
+	hasDreamOffer := false
+
+	for _, offeredJob := range offeredJobList {
+
+		if offeredJob.SalaryTier == "Open Dream" {
+			hasOpenDreamOffer = true
+		}
+		if offeredJob.SalaryTier == "Dream" {
+			hasDreamOffer = true
+		}
+		if offeredJob.JobType == "Internship" {
+			hasInternship = true
+		}
+	}
+
+	if hasOpenDreamOffer && hasInternship {
+		return nil, nil
+	}
+
 	studentIdParam := int32(studentId)
 
 	if alreadyAppliedJobIdList, err = db.Client.GetAlreadyAppliedJobIds(context.TODO(), studentIdParam); err != nil {
 		return nil, &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
 	}
+
 	params := sqlc.GetJobsParams{
-		Column1:             &studentIdParam,
-		Column2:             salaryTierFilter,
-		Column3:             jobRoleFilter,
-		Column4:             companyFilter,
-		AlreadyAppliedJobID: alreadyAppliedJobIdList,
+		StudentID:                 &studentIdParam,
+		SalaryTierFilter:          salaryTierFilter,
+		JobRoleFilter:             jobRoleFilter,
+		CompanyNameFilter:         companyFilter,
+		AlreadyAppliedJobID:       alreadyAppliedJobIdList,
+		DoNotShowSalaryTierFilter: make([]string, 0),
+		DoNotShowJobTypeFilter:    make([]string, 0),
+	}
+
+	if hasOpenDreamOffer {
+		params.DoNotShowSalaryTierFilter = append(params.DoNotShowSalaryTierFilter, "Open Dream")
+	}
+	if hasDreamOffer {
+		params.DoNotShowSalaryTierFilter = append(params.DoNotShowSalaryTierFilter, "Dream")
+	}
+	if hasInternship {
+		params.DoNotShowJobTypeFilter = append(params.DoNotShowJobTypeFilter, "Internship")
 	}
 
 	if jobs, err = db.Client.GetJobs(context.Background(), params); err != nil {

@@ -225,20 +225,24 @@ SELECT job_id, job_role, job_description, ctc, salary_tier, apply_by_date, cgpa_
 FROM job_table JOIN company_table
                     ON job_table.company_id = company_table.company_id
 WHERE (COALESCE(array_length($2::VARCHAR[], 1), 0) = 0 OR salary_tier = ANY($2))
-  AND (COALESCE(array_length($3::VARCHAR[], 1), 0) = 0 OR job_role = ANY($3))
-  AND (COALESCE(array_length($4::VARCHAR[], 1), 0) = 0 OR company_name = ANY($4))
+  AND (COALESCE(array_length($3::VARCHAR[], 1), 0) = 0 OR salary_tier <> ANY($3))
+  AND (COALESCE(array_length($4::VARCHAR[], 1), 0) = 0 OR job_role = ANY($4))
+  AND (COALESCE(array_length($5::VARCHAR[], 1), 0) = 0 OR job_role <> ANY($5))
+  AND (COALESCE(array_length($6::VARCHAR[], 1), 0) = 0 OR company_name = ANY($6))
   AND NOW() < apply_by_date
-  AND (COALESCE(array_length($5::INT[], 1), 0) = 0 OR job_id <> ANY($5))
+  AND (COALESCE(array_length($7::INT[], 1), 0) = 0 OR job_id <> ANY($7))
   AND ARRAY(SELECT branch FROM student_table WHERE student_id = $1) && eligible_branches
 AND job_table.eligible_batch = (SELECT batch from student_table where student_id = $1)
 `
 
 type GetJobsParams struct {
-	Column1             *int32   `json:"column_1"`
-	Column2             []string `json:"column_2"`
-	Column3             []string `json:"column_3"`
-	Column4             []string `json:"column_4"`
-	AlreadyAppliedJobID []int32  `json:"already_applied_job_id"`
+	StudentID                 *int32   `json:"student_id"`
+	SalaryTierFilter          []string `json:"salary_tier_filter"`
+	DoNotShowSalaryTierFilter []string `json:"do_not_show_salary_tier_filter"`
+	JobRoleFilter             []string `json:"job_role_filter"`
+	DoNotShowJobTypeFilter    []string `json:"do_not_show_job_type_filter"`
+	CompanyNameFilter         []string `json:"company_name_filter"`
+	AlreadyAppliedJobID       []int32  `json:"already_applied_job_id"`
 }
 
 type GetJobsRow struct {
@@ -256,10 +260,12 @@ type GetJobsRow struct {
 
 func (q *Queries) GetJobs(ctx context.Context, arg GetJobsParams) ([]*GetJobsRow, error) {
 	rows, err := q.db.Query(ctx, getJobs,
-		arg.Column1,
-		arg.Column2,
-		arg.Column3,
-		arg.Column4,
+		arg.StudentID,
+		arg.SalaryTierFilter,
+		arg.DoNotShowSalaryTierFilter,
+		arg.JobRoleFilter,
+		arg.DoNotShowJobTypeFilter,
+		arg.CompanyNameFilter,
 		arg.AlreadyAppliedJobID,
 	)
 	if err != nil {
@@ -291,10 +297,43 @@ func (q *Queries) GetJobs(ctx context.Context, arg GetJobsParams) ([]*GetJobsRow
 	return items, nil
 }
 
+const getOfferedJobInfo = `-- name: GetOfferedJobInfo :many
+SELECT DISTINCT salary_tier, job_type
+FROM job_table as j
+JOIN student_offer_table as so
+ON j.job_id = so.job_id
+WHERE so.student_id = $1
+`
+
+type GetOfferedJobInfoRow struct {
+	SalaryTier string `json:"salary_tier"`
+	JobType    string `json:"job_type"`
+}
+
+func (q *Queries) GetOfferedJobInfo(ctx context.Context, studentID int32) ([]*GetOfferedJobInfoRow, error) {
+	rows, err := q.db.Query(ctx, getOfferedJobInfo, studentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetOfferedJobInfoRow
+	for rows.Next() {
+		var i GetOfferedJobInfoRow
+		if err := rows.Scan(&i.SalaryTier, &i.JobType); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getStudentProfile = `-- name: GetStudentProfile :one
 SELECT name, usn, branch, cgpa, batch, num_active_backlogs, email_id, counsellor_email_id
 FROM student_table
-WHERE student_id = $1
+WHERE usn = $1
 `
 
 type GetStudentProfileRow struct {
@@ -308,8 +347,8 @@ type GetStudentProfileRow struct {
 	CounsellorEmailID string  `json:"counsellor_email_id"`
 }
 
-func (q *Queries) GetStudentProfile(ctx context.Context, studentID int32) (*GetStudentProfileRow, error) {
-	row := q.db.QueryRow(ctx, getStudentProfile, studentID)
+func (q *Queries) GetStudentProfile(ctx context.Context, usn string) (*GetStudentProfileRow, error) {
+	row := q.db.QueryRow(ctx, getStudentProfile, usn)
 	var i GetStudentProfileRow
 	err := row.Scan(
 		&i.Name,

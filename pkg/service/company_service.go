@@ -50,6 +50,7 @@ func (service *CompanyServiceImpl) CreateJob(companyId int, request entity.Creat
 		JobDescription:   request.JobDescription,
 	}
 	if err := db.Client.CreateJob(context.TODO(), params); err != nil {
+		slog.Error(err.Error())
 		return &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
 	}
 

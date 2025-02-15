@@ -34,9 +34,10 @@ type Querier interface {
 	GetJobOffers(ctx context.Context, studentID int32) ([]*GetJobOffersRow, error)
 	GetJobs(ctx context.Context, arg GetJobsParams) ([]*GetJobsRow, error)
 	GetOfferStatus(ctx context.Context, jobID int32) ([]*GetOfferStatusRow, error)
+	GetOfferedJobInfo(ctx context.Context, studentID int32) ([]*GetOfferedJobInfoRow, error)
 	GetPlacementStats(ctx context.Context) ([]*GetPlacementStatsRow, error)
 	GetPublishedJobs(ctx context.Context, companyID int32) ([]*GetPublishedJobsRow, error)
-	GetStudentProfile(ctx context.Context, studentID int32) (*GetStudentProfileRow, error)
+	GetStudentProfile(ctx context.Context, usn string) (*GetStudentProfileRow, error)
 	InsertUser(ctx context.Context, arg InsertUserParams) error
 	OfferJob(ctx context.Context, arg OfferJobParams) error
 	PerformJobOfferAction(ctx context.Context, arg PerformJobOfferActionParams) error

@@ -2,6 +2,8 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -40,7 +42,8 @@ func (handler *CompanyHandler) CreateJob(w http.ResponseWriter, r *http.Request)
 	companyId, err := helper.ValidateAccessToken(r.Header.Get("Auth"))
 
 	if err != nil {
-		return &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
+		slog.Error(fmt.Sprintf("%v", err.Error))
+		return err
 	}
 
 	request := entity.CreateJobRequest{}

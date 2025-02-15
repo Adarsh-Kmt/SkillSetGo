@@ -32,18 +32,20 @@ AND job_id = $2;
 -- name: GetJobs :many
 SELECT job_id, job_role, job_description, ctc, salary_tier, apply_by_date, cgpa_cutoff, company_name, industry,
        (CASE WHEN
-                 cgpa_cutoff <= (SELECT cgpa FROM student_table WHERE student_id = $1) THEN TRUE
+                 cgpa_cutoff <= (SELECT cgpa FROM student_table WHERE student_id = sqlc.arg(student_id)) THEN TRUE
              ELSE FALSE
            END) AS can_apply
 FROM job_table JOIN company_table
                     ON job_table.company_id = company_table.company_id
-WHERE (COALESCE(array_length($2::VARCHAR[], 1), 0) = 0 OR salary_tier = ANY($2))
-  AND (COALESCE(array_length($3::VARCHAR[], 1), 0) = 0 OR job_role = ANY($3))
-  AND (COALESCE(array_length($4::VARCHAR[], 1), 0) = 0 OR company_name = ANY($4))
+WHERE (COALESCE(array_length(sqlc.arg(salary_tier_filter)::VARCHAR[], 1), 0) = 0 OR salary_tier = ANY(sqlc.arg(salary_tier_filter)))
+  AND (COALESCE(array_length(sqlc.arg(do_not_show_salary_tier_filter)::VARCHAR[], 1), 0) = 0 OR salary_tier <> ANY(sqlc.arg(do_not_show_salary_tier_filter)))
+  AND (COALESCE(array_length(sqlc.arg(job_role_filter)::VARCHAR[], 1), 0) = 0 OR job_role = ANY(sqlc.arg(job_role_filter)))
+  AND (COALESCE(array_length(sqlc.arg(do_not_show_job_type_filter)::VARCHAR[], 1), 0) = 0 OR job_role <> ANY(sqlc.arg(do_not_show_job_type_filter)))
+  AND (COALESCE(array_length(sqlc.arg(company_name_filter)::VARCHAR[], 1), 0) = 0 OR company_name = ANY(sqlc.arg(company_name_filter)))
   AND NOW() < apply_by_date
   AND (COALESCE(array_length(sqlc.arg(already_applied_job_id)::INT[], 1), 0) = 0 OR job_id <> ANY(sqlc.arg(already_applied_job_id)))
-  AND ARRAY(SELECT branch FROM student_table WHERE student_id = $1) && eligible_branches
-AND job_table.eligible_batch = (SELECT batch from student_table where student_id = $1);
+  AND ARRAY(SELECT branch FROM student_table WHERE student_id = sqlc.arg(student_id)) && eligible_branches
+AND job_table.eligible_batch = (SELECT batch from student_table where student_id = sqlc.arg(student_id));
 
 
 -- name: GetStudentProfile :one
@@ -70,3 +72,10 @@ WHERE sj.student_id = sqlc.arg(student_id);
 SELECT job_id
 FROM student_job_application_table
 WHERE student_id = sqlc.arg(student_id);
+
+-- name: GetOfferedJobInfo :many
+SELECT DISTINCT salary_tier, job_type
+FROM job_table as j
+JOIN student_offer_table as so
+ON j.job_id = so.job_id
+WHERE so.student_id = sqlc.arg(student_id);
