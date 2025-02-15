@@ -18,6 +18,11 @@ type CompanyService interface {
 	GetPublishedJobs(companyId int) (jobs []*sqlc.GetPublishedJobsRow, httpError *helper.HTTPError)
 	GetJobApplicants(companyId int, jobId int) (profiles []*sqlc.GetJobApplicantsRow, httpError *helper.HTTPError)
 	GetOfferStatus(companyId int, jobId int) (offerStatus []*sqlc.GetOfferStatusRow, httpError *helper.HTTPError)
+
+	ScheduleInterview(companyId int, request entity.ScheduleInterviewRequest) (httpError *helper.HTTPError)
+	GetScheduledInterviews(companyId int, jobId int) (interviews []*sqlc.GetInterviewsScheduledByCompanyRow, httpError *helper.HTTPError)
+
+	GetPlacementStats() (stats []*sqlc.GetPlacementStatsRow, httpError *helper.HTTPError)
 }
 type CompanyServiceImpl struct {
 }
@@ -42,6 +47,7 @@ func (service *CompanyServiceImpl) CreateJob(companyId int, request entity.Creat
 		CgpaCutoff:       request.CgpaCutoff,
 		EligibleBatch:    int32(request.EligibleBatch),
 		EligibleBranches: request.EligibleBranches,
+		JobDescription:   request.JobDescription,
 	}
 	if err := db.Client.CreateJob(context.TODO(), params); err != nil {
 		return &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
@@ -54,13 +60,27 @@ func (service *CompanyServiceImpl) OfferJob(request entity.OfferJobRequest) (htt
 
 	abd, _ := time.Parse("2006-01-02 15:04:05", request.ActByDate)
 
+	checkParams := sqlc.CheckIfOfferedAlreadyParams{
+		StudentID: int32(request.StudentId),
+		JobID:     int32(request.JobId),
+	}
+
+	exists, err := db.Client.CheckIfOfferedAlready(context.TODO(), checkParams)
+
+	if err != nil {
+		return &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
+	}
+
+	if exists {
+		return &helper.HTTPError{StatusCode: 404, Error: "student already received offer"}
+	}
 	params := sqlc.OfferJobParams{
 		StudentID: int32(request.StudentId),
 		JobID:     int32(request.JobId),
 		ActByDate: pgtype.Timestamp{Time: abd, Valid: true},
 	}
 
-	err := db.Client.OfferJob(context.TODO(), params)
+	err = db.Client.OfferJob(context.TODO(), params)
 
 	if err != nil {
 		slog.Error(err.Error())
@@ -122,5 +142,38 @@ func (service *CompanyServiceImpl) GetOfferStatus(companyId int, jobId int) (off
 	if err != nil {
 		return nil, &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
 	}
+	return rows, nil
+}
+
+func (service *CompanyServiceImpl) GetScheduledInterviews(companyId int, jobId int) (interviews []*sqlc.GetInterviewsScheduledByCompanyRow, httpError *helper.HTTPError) {
+
+	checkParams := sqlc.CheckIfCompanyCreatedJobParams{CompanyID: int32(companyId), JobID: int32(jobId)}
+
+	wasCreated, err := db.Client.CheckIfCompanyCreatedJob(context.TODO(), checkParams)
+
+	if err != nil {
+		return nil, &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
+	}
+
+	if !wasCreated {
+		return nil, &helper.HTTPError{StatusCode: 403, Error: "company did not publish job"}
+	}
+
+	rows, err := db.Client.GetInterviewsScheduledByCompany(context.TODO(), int32(jobId))
+	if err != nil {
+		return nil, &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
+	}
+
+	return rows, nil
+}
+
+func (service *CompanyServiceImpl) GetPlacementStats() (stats []*sqlc.GetPlacementStatsRow, httpError *helper.HTTPError) {
+
+	rows, err := db.Client.GetPlacementStats(context.TODO())
+
+	if err != nil {
+		return nil, &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
+	}
+
 	return rows, nil
 }

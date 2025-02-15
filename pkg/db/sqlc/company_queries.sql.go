@@ -32,15 +32,81 @@ func (q *Queries) CheckIfCompanyCreatedJob(ctx context.Context, arg CheckIfCompa
 	return exists, err
 }
 
+const checkIfInterviewExists = `-- name: CheckIfInterviewExists :one
+SELECT EXISTS(
+    SELECT student_id
+    FROM student_job_interview_table
+    WHERE student_id = $1
+    AND job_id = $2
+    AND interview_round = $3
+)
+`
+
+type CheckIfInterviewExistsParams struct {
+	StudentID      int32 `json:"student_id"`
+	JobID          int32 `json:"job_id"`
+	InterviewRound int32 `json:"interview_round"`
+}
+
+func (q *Queries) CheckIfInterviewExists(ctx context.Context, arg CheckIfInterviewExistsParams) (bool, error) {
+	row := q.db.QueryRow(ctx, checkIfInterviewExists, arg.StudentID, arg.JobID, arg.InterviewRound)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const checkIfOfferedAlready = `-- name: CheckIfOfferedAlready :one
+SELECT EXISTS(
+    SELECT student_id
+    FROM student_offer_table
+    WHERE student_id = $1
+    AND job_id = $2
+)
+`
+
+type CheckIfOfferedAlreadyParams struct {
+	StudentID int32 `json:"student_id"`
+	JobID     int32 `json:"job_id"`
+}
+
+func (q *Queries) CheckIfOfferedAlready(ctx context.Context, arg CheckIfOfferedAlreadyParams) (bool, error) {
+	row := q.db.QueryRow(ctx, checkIfOfferedAlready, arg.StudentID, arg.JobID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const checkIfVenueBeingUsedAtParticularTime = `-- name: CheckIfVenueBeingUsedAtParticularTime :one
+SELECT EXISTS(
+    SELECT student_id
+    FROM student_job_interview_table
+    WHERE venue = $1
+    AND ABS(EXTRACT(EPOCH FROM ($2 - interview_date))) <= 1800
+)
+`
+
+type CheckIfVenueBeingUsedAtParticularTimeParams struct {
+	Venue                        string           `json:"venue"`
+	DateOfInterviewToBeScheduled pgtype.Timestamp `json:"date_of_interview_to_be_scheduled"`
+}
+
+func (q *Queries) CheckIfVenueBeingUsedAtParticularTime(ctx context.Context, arg CheckIfVenueBeingUsedAtParticularTimeParams) (bool, error) {
+	row := q.db.QueryRow(ctx, checkIfVenueBeingUsedAtParticularTime, arg.Venue, arg.DateOfInterviewToBeScheduled)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const createJob = `-- name: CreateJob :exec
-INSERT INTO job_table(company_id, job_role, job_type, ctc, salary_tier, apply_by_date, cgpa_cutoff, eligible_batch, eligible_branches)
-VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+INSERT INTO job_table(company_id, job_role, job_type, job_description, ctc, salary_tier, apply_by_date, cgpa_cutoff, eligible_batch, eligible_branches)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 `
 
 type CreateJobParams struct {
 	CompanyID        int32            `json:"company_id"`
 	JobRole          string           `json:"job_role"`
 	JobType          string           `json:"job_type"`
+	JobDescription   string           `json:"job_description"`
 	Ctc              float32          `json:"ctc"`
 	SalaryTier       string           `json:"salary_tier"`
 	ApplyByDate      pgtype.Timestamp `json:"apply_by_date"`
@@ -54,6 +120,7 @@ func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) error {
 		arg.CompanyID,
 		arg.JobRole,
 		arg.JobType,
+		arg.JobDescription,
 		arg.Ctc,
 		arg.SalaryTier,
 		arg.ApplyByDate,
@@ -99,6 +166,98 @@ func (q *Queries) GetEligibleStudents(ctx context.Context, jobID int32) ([]*GetE
 			&i.Cgpa,
 			&i.NumActiveBacklogs,
 			&i.EmailID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getInterviewsScheduledByCompany = `-- name: GetInterviewsScheduledByCompany :many
+SELECT s.name, s.usn, s.student_id, s.cgpa, venue, interview_date
+FROM student_job_interview_table as sj
+JOIN student_table as s
+ON sj.student_id = s.student_id
+WHERE job_id = $1
+`
+
+type GetInterviewsScheduledByCompanyRow struct {
+	Name          string           `json:"name"`
+	Usn           string           `json:"usn"`
+	StudentID     int32            `json:"student_id"`
+	Cgpa          float32          `json:"cgpa"`
+	Venue         string           `json:"venue"`
+	InterviewDate pgtype.Timestamp `json:"interview_date"`
+}
+
+func (q *Queries) GetInterviewsScheduledByCompany(ctx context.Context, jobID int32) ([]*GetInterviewsScheduledByCompanyRow, error) {
+	rows, err := q.db.Query(ctx, getInterviewsScheduledByCompany, jobID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetInterviewsScheduledByCompanyRow
+	for rows.Next() {
+		var i GetInterviewsScheduledByCompanyRow
+		if err := rows.Scan(
+			&i.Name,
+			&i.Usn,
+			&i.StudentID,
+			&i.Cgpa,
+			&i.Venue,
+			&i.InterviewDate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getInterviewsScheduledForStudent = `-- name: GetInterviewsScheduledForStudent :many
+SELECT sj.job_id, job_role, job_type, ctc, company_name, venue, interview_date
+FROM student_job_interview_table as sj
+JOIN job_table as j
+ON j.job_id = sj.job_id
+JOIN company_table as c
+ON j.company_id = c.company_id
+WHERE sj.student_id = $1
+`
+
+type GetInterviewsScheduledForStudentRow struct {
+	JobID         int32            `json:"job_id"`
+	JobRole       string           `json:"job_role"`
+	JobType       string           `json:"job_type"`
+	Ctc           float32          `json:"ctc"`
+	CompanyName   string           `json:"company_name"`
+	Venue         string           `json:"venue"`
+	InterviewDate pgtype.Timestamp `json:"interview_date"`
+}
+
+func (q *Queries) GetInterviewsScheduledForStudent(ctx context.Context, studentID int32) ([]*GetInterviewsScheduledForStudentRow, error) {
+	rows, err := q.db.Query(ctx, getInterviewsScheduledForStudent, studentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetInterviewsScheduledForStudentRow
+	for rows.Next() {
+		var i GetInterviewsScheduledForStudentRow
+		if err := rows.Scan(
+			&i.JobID,
+			&i.JobRole,
+			&i.JobType,
+			&i.Ctc,
+			&i.CompanyName,
+			&i.Venue,
+			&i.InterviewDate,
 		); err != nil {
 			return nil, err
 		}
@@ -212,8 +371,44 @@ func (q *Queries) GetOfferStatus(ctx context.Context, jobID int32) ([]*GetOfferS
 	return items, nil
 }
 
+const getPlacementStats = `-- name: GetPlacementStats :many
+SELECT s.branch, AVG(j.ctc) as mean_lpa, COUNT(so.student_id) as number_of_offers
+FROM student_offer_table as so
+JOIN job_table as j
+ON so.job_id = j.job_id
+JOIN student_table as s
+ON so.student_id = s.student_id
+GROUP BY branch
+`
+
+type GetPlacementStatsRow struct {
+	Branch         string  `json:"branch"`
+	MeanLpa        float64 `json:"mean_lpa"`
+	NumberOfOffers int64   `json:"number_of_offers"`
+}
+
+func (q *Queries) GetPlacementStats(ctx context.Context) ([]*GetPlacementStatsRow, error) {
+	rows, err := q.db.Query(ctx, getPlacementStats)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetPlacementStatsRow
+	for rows.Next() {
+		var i GetPlacementStatsRow
+		if err := rows.Scan(&i.Branch, &i.MeanLpa, &i.NumberOfOffers); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getPublishedJobs = `-- name: GetPublishedJobs :many
-SELECT job_id, job_role, job_type, ctc, salary_tier, apply_by_date, cgpa_cutoff, eligible_batch, eligible_branches
+SELECT job_id, job_role, job_type, ctc, job_description, salary_tier, apply_by_date, cgpa_cutoff, eligible_batch, eligible_branches
 FROM job_table
 WHERE company_id = $1
 `
@@ -223,6 +418,7 @@ type GetPublishedJobsRow struct {
 	JobRole          string           `json:"job_role"`
 	JobType          string           `json:"job_type"`
 	Ctc              float32          `json:"ctc"`
+	JobDescription   string           `json:"job_description"`
 	SalaryTier       string           `json:"salary_tier"`
 	ApplyByDate      pgtype.Timestamp `json:"apply_by_date"`
 	CgpaCutoff       float32          `json:"cgpa_cutoff"`
@@ -244,6 +440,7 @@ func (q *Queries) GetPublishedJobs(ctx context.Context, companyID int32) ([]*Get
 			&i.JobRole,
 			&i.JobType,
 			&i.Ctc,
+			&i.JobDescription,
 			&i.SalaryTier,
 			&i.ApplyByDate,
 			&i.CgpaCutoff,
@@ -273,5 +470,51 @@ type OfferJobParams struct {
 
 func (q *Queries) OfferJob(ctx context.Context, arg OfferJobParams) error {
 	_, err := q.db.Exec(ctx, offerJob, arg.StudentID, arg.JobID, arg.ActByDate)
+	return err
+}
+
+const scheduleInterview = `-- name: ScheduleInterview :exec
+INSERT INTO student_job_interview_table(student_id, job_id, interview_date, venue)
+VALUES($1, $2, $3, $4)
+`
+
+type ScheduleInterviewParams struct {
+	StudentID     int32            `json:"student_id"`
+	JobID         int32            `json:"job_id"`
+	InterviewDate pgtype.Timestamp `json:"interview_date"`
+	Venue         string           `json:"venue"`
+}
+
+func (q *Queries) ScheduleInterview(ctx context.Context, arg ScheduleInterviewParams) error {
+	_, err := q.db.Exec(ctx, scheduleInterview,
+		arg.StudentID,
+		arg.JobID,
+		arg.InterviewDate,
+		arg.Venue,
+	)
+	return err
+}
+
+const updateInterviewResult = `-- name: UpdateInterviewResult :exec
+UPDATE student_job_interview_table SET result = $1
+WHERE student_id = $2
+AND job_id = $3
+AND interview_round = $4
+`
+
+type UpdateInterviewResultParams struct {
+	Result         string `json:"result"`
+	StudentID      int32  `json:"student_id"`
+	JobID          int32  `json:"job_id"`
+	InterviewRound int32  `json:"interview_round"`
+}
+
+func (q *Queries) UpdateInterviewResult(ctx context.Context, arg UpdateInterviewResultParams) error {
+	_, err := q.db.Exec(ctx, updateInterviewResult,
+		arg.Result,
+		arg.StudentID,
+		arg.JobID,
+		arg.InterviewRound,
+	)
 	return err
 }

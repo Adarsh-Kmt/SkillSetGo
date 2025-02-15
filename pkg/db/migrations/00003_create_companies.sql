@@ -8,5 +8,5 @@ VALUES('Microsoft', 'Harish', '1234567890', 'Software', 'softmicro', '1234'),
 
 -- +goose Down
 -- +goose StatementBegin
-DELETE FROM company_table where company_id <= 3;
+DELETE FROM company_table;
 -- +goose StatementEnd

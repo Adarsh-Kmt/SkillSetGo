@@ -26,6 +26,7 @@ CREATE TABLE job_table(
     company_id INT NOT NULL,
     job_role VARCHAR(255) NOT NULL,
     job_type VARCHAR(255) NOT NULL,
+    job_description TEXT NOT NULL,
     ctc REAL NOT NULL,
     salary_tier VARCHAR(15) NOT NULL,
     apply_by_date TIMESTAMP NOT NULL,
@@ -55,10 +56,12 @@ CREATE TABLE student_job_application_table(
 
 CREATE TABLE student_job_interview_table(
     student_id INT NOT NULL,
+    job_id INT NOT NULL,
     venue VARCHAR(50) NOT NULL,
     interview_date TIMESTAMP NOT NULL,
     interview_round INT NOT NULL,
     result VARCHAR(15) NOT NULL,
-    FOREIGN KEY(student_id) REFERENCES student_table(student_id)
+    FOREIGN KEY(student_id) REFERENCES student_table(student_id),
+    FOREIGN KEY(job_id) REFERENCES job_table(job_id)
 );
 

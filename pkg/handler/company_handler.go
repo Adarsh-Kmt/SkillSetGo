@@ -27,6 +27,11 @@ func (handler *CompanyHandler) MuxSetup(mux *mux.Router) *mux.Router {
 	mux.HandleFunc("/company/job/offer", helper.MakeAuthorizedHandler(helper.MakeHttpHandlerFunc(handler.OfferJob), companyAdminRoleRequired)).Methods("POST")
 	mux.HandleFunc("/company/job/{job-id}/applicants", helper.MakeAuthorizedHandler(helper.MakeHttpHandlerFunc(handler.GetJobApplicants), companyAdminRoleRequired)).Methods("GET")
 	mux.HandleFunc("/company/job/{job-id}/offer", helper.MakeAuthorizedHandler(helper.MakeHttpHandlerFunc(handler.GetOfferStatus), companyAdminRoleRequired)).Methods("GET")
+	mux.HandleFunc("/company/job/interview", helper.MakeAuthorizedHandler(helper.MakeHttpHandlerFunc(handler.ScheduleInterview), companyAdminRoleRequired)).Methods("POST")
+
+	mux.HandleFunc("/company/job/{job-id}/interview", helper.MakeAuthorizedHandler(helper.MakeHttpHandlerFunc(handler.GetScheduledInterviews), companyAdminRoleRequired)).Methods("GET")
+
+	mux.HandleFunc("/stats", helper.MakeHttpHandlerFunc(handler.GetPlacementStats)).Methods("GET")
 	return mux
 }
 
@@ -143,5 +148,66 @@ func (handler *CompanyHandler) GetOfferStatus(w http.ResponseWriter, r *http.Req
 	}
 
 	helper.WriteJSON(w, http.StatusOK, map[string]any{"offers": offers})
+	return nil
+}
+
+func (handler *CompanyHandler) ScheduleInterview(w http.ResponseWriter, r *http.Request) *helper.HTTPError {
+
+	companyId, httpError := helper.ValidateAccessToken(r.Header.Get("Auth"))
+	if httpError != nil {
+		return httpError
+	}
+
+	request := entity.ScheduleInterviewRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		return &helper.HTTPError{StatusCode: 400, Error: "bad request"}
+	}
+	httpError = entity.ValidateScheduleInterviewRequest(request)
+	if httpError != nil {
+		return httpError
+	}
+
+	httpError = handler.companyService.ScheduleInterview(companyId, request)
+	if httpError != nil {
+		return httpError
+	}
+	helper.WriteJSON(w, http.StatusOK, map[string]any{"message": "interview scheduled successfully"})
+
+	return nil
+}
+
+func (handler *CompanyHandler) GetScheduledInterviews(w http.ResponseWriter, r *http.Request) *helper.HTTPError {
+
+	companyId, httpError := helper.ValidateAccessToken(r.Header.Get("Auth"))
+	if httpError != nil {
+		return httpError
+	}
+
+	vars := mux.Vars(r)
+
+	jobIdString := vars["job-id"]
+
+	jobId, err := strconv.Atoi(jobIdString)
+
+	if err != nil || jobId == 0 {
+		return &helper.HTTPError{StatusCode: 400, Error: "invalid job id"}
+	}
+
+	interviews, httpError := handler.companyService.GetScheduledInterviews(companyId, jobId)
+	if httpError != nil {
+		return httpError
+	}
+	helper.WriteJSON(w, http.StatusOK, map[string]any{"interviews": interviews})
+	return nil
+}
+
+func (handler *CompanyHandler) GetPlacementStats(w http.ResponseWriter, r *http.Request) *helper.HTTPError {
+
+	stats, httpError := handler.companyService.GetPlacementStats()
+
+	if httpError != nil {
+		return httpError
+	}
+	helper.WriteJSON(w, http.StatusOK, map[string]any{"stats": stats})
 	return nil
 }

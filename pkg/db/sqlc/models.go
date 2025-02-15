@@ -23,6 +23,7 @@ type JobTable struct {
 	CompanyID        int32            `json:"company_id"`
 	JobRole          string           `json:"job_role"`
 	JobType          string           `json:"job_type"`
+	JobDescription   string           `json:"job_description"`
 	Ctc              float32          `json:"ctc"`
 	SalaryTier       string           `json:"salary_tier"`
 	ApplyByDate      pgtype.Timestamp `json:"apply_by_date"`
@@ -39,6 +40,7 @@ type StudentJobApplicationTable struct {
 
 type StudentJobInterviewTable struct {
 	StudentID      int32            `json:"student_id"`
+	JobID          int32            `json:"job_id"`
 	Venue          string           `json:"venue"`
 	InterviewDate  pgtype.Timestamp `json:"interview_date"`
 	InterviewRound int32            `json:"interview_round"`
