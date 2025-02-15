@@ -15,6 +15,16 @@ app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'dev-key-123')
 # Go backend API URL
 API_URL = 'http://localhost:8080'  # Adjust this to your Go server port
 
+@app.route("/stats",methods=['GET'])
+def get_placement_stats():
+    try:
+        response = requests.get(f"{API_URL}/stats")
+        stats= response.json().get('stats', [])
+        return render_template('stats.html',stats=stats)
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': 'Failed to connect to server'}), 500
+
 def get_user_id_from_token(token):
     """Extract user_id from JWT token"""
     try:
