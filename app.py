@@ -6,9 +6,13 @@ from datetime import datetime
 import base64
 import json
 from datetime import timedelta
+from flask import Flask, request, render_template_string, jsonify
+import PyPDF2
+from groq import Groq
+
 
 load_dotenv()
-
+GROQ_API = "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"
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'dev-key-123')
 
@@ -1055,14 +1059,105 @@ def resume_matcher():
         return redirect(url_for('login'))
     return render_template('resume_matcher.html')
 
-@app.route('/match', methods=['POST'])
+def extract_text_from_pdf(pdf_file):
+    pdf_reader = PyPDF2.PdfReader(pdf_file)
+    text = ""
+    for page in pdf_reader.pages:
+        text += page.extract_text()
+    return text
+
+def get_groq_score(resume_text, job_description):
+    l=[]
+    client = Groq(api_key=GROQ_API)
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a helpful assistant which enables students to identify whether their skills are aligned with the job description. Your reply should be in the form of a feedback when given a resume content and JD. Both are separated by ******. Do not use bold formatting return in plain text. Do not include any score. Limit to 50 words."
+            },
+            {
+                "role": "user",
+                "content": resume_text + "******" + job_description
+            }
+        ],
+        model="llama3-8b-8192",
+    )
+    l.append(chat_completion.choices[0].message.content)
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a helpful assistant which enables students to identify whether their skills are aligned with the job description. Your reply should be in the form of a score out of 10 and only the score. Nothing else. Only the score. Return in plain text"+l[0]+"THis is the feedback provided ensure that the score matches feedback. Return only score"
+            },
+            {
+                "role": "user",
+                "content": resume_text + "******" + job_description
+            }
+        ],
+        model="llama3-8b-8192",
+    )
+    l.append(chat_completion.choices[0].message.content)
+    return l
+
+def beautify_text(text):
+    client = Groq(api_key=GROQ_API)
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "system",
+                "content": "Given the resume content, extract useful info and return it in a presentable format, dont't use markdown as I will be using it in a HTML page. Return in plain text. Don't use ** for bold, I will be displaying it using render_template of Flask. Use new line sequences"
+            },
+            {   "role": "user",
+                "content": text
+            }
+        ],
+        model="llama3-8b-8192",
+    )
+    return chat_completion.choices[0].message.content
+
+@app.route('/match_resume', methods=['POST'])
 def match_resume():
     if 'access_token' not in session:
         return redirect(url_for('login'))
     
-    # Import the resume parsing function from innovative component
-    from innovative_component import match
-    return match()
+    if 'resume' not in request.files or 'jobDescription' not in request.form:
+        return jsonify({'error': 'Please upload a resume and enter a job description.'}), 400
 
+    resume = request.files['resume']
+    job_description = request.form['jobDescription']
+
+    try:
+        # Extract text from resume PDF
+        resume_text = extract_text_from_pdf(resume)
+        r = beautify_text(resume_text)
+        
+        # Get score from Groq
+        message = get_groq_score(r, job_description)
+        score = message[1]
+        m = message[0]
+        
+        # Extract student ID from token
+        token = session['access_token']
+        token_parts = token.split('.')
+        if len(token_parts) > 1:
+            payload = json.loads(base64.b64decode(token_parts[1] + '=' * (-len(token_parts[1]) % 4)).decode('utf-8'))
+            student_id = payload.get('id')
+            
+            if not student_id:
+                print("No student ID found in token payload:", payload)
+                flash('Invalid session', 'error')
+                return redirect(url_for('login'))
+        else:
+            flash('Invalid token format', 'error')
+            return redirect(url_for('login'))
+        
+        headers = {'Auth': session['access_token']}
+        profile_response = requests.get(f"http://localhost:8080/student/{student_id}/profile", headers=headers)
+        profile = profile_response.json().get('profile', {})
+        
+        return render_template('match_resume.html', score=score, message=m, resume_text=r, job_description=job_description, profile=profile)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 if __name__ == '__main__':
     app.run(debug=True)
