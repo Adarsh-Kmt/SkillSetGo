@@ -51,7 +51,7 @@ AND job_table.eligible_batch = (SELECT batch from student_table where student_id
 -- name: GetStudentProfile :one
 SELECT name, usn, branch, cgpa, batch, num_active_backlogs, email_id, counsellor_email_id
 FROM student_table
-WHERE usn = sqlc.arg(usn);
+WHERE student_id = sqlc.arg(student_id);
 
 -- name: CheckIfAppliedForJobAlready :one
 SELECT EXISTS(

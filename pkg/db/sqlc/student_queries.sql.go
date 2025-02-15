@@ -333,7 +333,7 @@ func (q *Queries) GetOfferedJobInfo(ctx context.Context, studentID int32) ([]*Ge
 const getStudentProfile = `-- name: GetStudentProfile :one
 SELECT name, usn, branch, cgpa, batch, num_active_backlogs, email_id, counsellor_email_id
 FROM student_table
-WHERE usn = $1
+WHERE student_id = $1
 `
 
 type GetStudentProfileRow struct {
@@ -347,8 +347,8 @@ type GetStudentProfileRow struct {
 	CounsellorEmailID string  `json:"counsellor_email_id"`
 }
 
-func (q *Queries) GetStudentProfile(ctx context.Context, usn string) (*GetStudentProfileRow, error) {
-	row := q.db.QueryRow(ctx, getStudentProfile, usn)
+func (q *Queries) GetStudentProfile(ctx context.Context, studentID int32) (*GetStudentProfileRow, error) {
+	row := q.db.QueryRow(ctx, getStudentProfile, studentID)
 	var i GetStudentProfileRow
 	err := row.Scan(
 		&i.Name,
