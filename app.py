@@ -671,7 +671,8 @@ def post_job():
     headers = {
         'Auth': session['company_access_token']
     }
-    
+    apply_by_date = request.form['apply_by_date']
+    apply_by_date_time=datetime.strptime(f"{apply_by_date} 23:59:59", '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S')
     try:
         # Get form data
         job_data = {
@@ -679,9 +680,11 @@ def post_job():
             'job_type': request.form['job_type'],
             'ctc': float(request.form['ctc']),
             'salary_tier': request.form['salary_tier'],
-            'description': request.form['description'],
+            'job_description': request.form['description'],
             'cgpa_cutoff': float(request.form['cgpa_cutoff']),
-            'apply_by_date': request.form['apply_by_date']
+            'apply_by_date': apply_by_date_time,
+            'eligible_branches': request.form.getlist('eligible_branches'),
+            'eligible_batch':int(request.form['eligible_batch'])
         }
         
         print(f"Posting job with data: {job_data}")

@@ -60,6 +60,73 @@
                                 <label for="apply_by_date" class="form-label">Apply By Date</label>
                                 <input type="date" class="form-control" id="apply_by_date" name="apply_by_date" required>
                             </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="eligible_batch" class="form-label">Eligible batch</label>
+                                <input type="number" class="form-control" id="eligible_batch" name="eligible_batch" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="eligible_branches" class="form-label">Eligible Branches</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="branch_cse" name="eligible_branches" value="CSE">
+                                    <label class="form-check-label" for="branch_cse">CSE</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="branch_ise" name="eligible_branches" value="ISE">
+                                    <label class="form-check-label" for="branch_ise">ISE</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="branch_eee" name="eligible_branches" value="EEE">
+                                    <label class="form-check-label" for="branch_eee">EEE</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="branch_me" name="eligible_branches" value="ME">
+                                    <label class="form-check-label" for="branch_me">ME</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="branch_cv" name="eligible_branches" value="CV">
+                                    <label class="form-check-label" for="branch_cv">CV</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="branch_cy" name="eligible_branches" value="CY">
+                                    <label class="form-check-label" for="branch_cy">CY</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="branch_cd" name="eligible_branches" value="CD">
+                                    <label class="form-check-label" for="branch_cd">CD</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="branch_ece" name="eligible_branches" value="ECE">
+                                    <label class="form-check-label" for="branch_ece">ECE</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="branch_eie" name="eligible_branches" value="EIE">
+                                    <label class="form-check-label" for="branch_eie">EIE</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="branch_ete" name="eligible_branches" value="ETE">
+                                    <label class="form-check-label" for="branch_ete">ETE</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="branch_bt" name="eligible_branches" value="BT">
+                                    <label class="form-check-label" for="branch_bt">BT</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="branch_as" name="eligible_branches" value="AS">
+                                    <label class="form-check-label" for="branch_as">AS</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="branch_ch" name="eligible_branches" value="CH">
+                                    <label class="form-check-label" for="branch_ch">CH</label>
+                                </div>
+                            </div>    
+                        </div>
+                            <div class="col-md-6 mb-3">
+            <label for="salary_tier" class="form-label">Salary Tier</label>
+            <select class="form-select" id="salary_tier" name="salary_tier" required>
+                <option value="Dream">Dream</option>
+                <option value="Open Dream">Open Dream</option>
+                <option value="Mass Recruitment">Mass Recruitment</option>
+            </select>
                         </div>
                         <button type="submit" class="btn btn-primary">Post Job</button>
                     </form>
