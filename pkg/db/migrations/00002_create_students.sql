@@ -8,5 +8,6 @@ VALUES('1RV22IS002', '12345','Adarsh Kamath', 'ISE', 2026, 9.48, 0, 'adarshkamat
 
 -- +goose Down
 -- +goose StatementBegin
-DELETE FROM student_table where student_id <= 3;
+DELETE FROM student_job_application_table;
+DELETE FROM student_table;
 -- +goose StatementEnd

@@ -2,6 +2,14 @@
 INSERT INTO student_job_application_table(student_id, job_id, applied_on_date)
 VALUES($1, $2, NOW());
 
+-- name: CheckIfAlreadyAppliedForJob :one
+SELECT EXISTS(
+    SELECT student_id
+    FROM student_job_application_table
+    WHERE job_id = sqlc.arg(job_id)
+    AND student_id = sqlc.arg(student_id)
+);
+
 -- name: GetJobOffers :many
 SELECT job_table.job_id, company_name, job_role, job_type, ctc, salary_tier, action, action_date, act_by_date
 FROM student_offer_table JOIN job_table 
@@ -22,7 +30,7 @@ WHERE student_id = $1
 AND job_id = $2;
 
 -- name: GetJobs :many
-SELECT job_id, job_role, ctc, salary_tier, apply_by_date, cgpa_cutoff, company_name, industry,
+SELECT job_id, job_role, job_description, ctc, salary_tier, apply_by_date, cgpa_cutoff, company_name, industry,
        (CASE WHEN
                  cgpa_cutoff <= (SELECT cgpa FROM student_table WHERE student_id = $1) THEN TRUE
              ELSE FALSE
@@ -52,7 +60,7 @@ SELECT EXISTS(
 );
 
 -- name: GetAlreadyAppliedJobs :many
-SELECT j.job_id, job_role, job_type, ctc, salary_tier, apply_by_date, cgpa_cutoff, eligible_batch, eligible_branches
+SELECT j.job_id, job_role, job_description, job_type, ctc, salary_tier, apply_by_date, cgpa_cutoff, eligible_batch, eligible_branches
 FROM student_job_application_table as sj
 JOIN job_table as j
 ON sj.job_id = j.job_id

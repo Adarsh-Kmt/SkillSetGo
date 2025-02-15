@@ -12,6 +12,7 @@ var (
 
 type CreateJobRequest struct {
 	JobRole          string   `json:"job_role"`
+	JobDescription   string   `json:"job_description"`
 	Ctc              float32  `json:"ctc"`
 	SalaryTier       string   `json:"salary_tier"`
 	ApplyByDate      string   `json:"apply_by_date"`
@@ -47,6 +48,10 @@ func ValidateCreateJobRequest(request CreateJobRequest) (httpError *helper.HTTPE
 
 	if request.SalaryTier == "" || (request.SalaryTier != "Open Dream" && request.SalaryTier != "Dream" && request.SalaryTier != "Mass Recruitment") {
 		errorMap["salary_tier"] = "salary_tier cannot be empty, must be one of Open Dream, Dream, Mass Recruitment"
+	}
+
+	if request.JobDescription == "" {
+		errorMap["job_description"] = "job_description cannot be empty"
 	}
 
 	if (request.SalaryTier == "Open Dream" && request.Ctc <= 8) || (request.SalaryTier == "Dream" && request.Ctc <= 3) {

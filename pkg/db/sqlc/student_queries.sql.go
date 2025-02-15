@@ -26,6 +26,27 @@ func (q *Queries) ApplyForJob(ctx context.Context, arg ApplyForJobParams) error 
 	return err
 }
 
+const checkIfAlreadyAppliedForJob = `-- name: CheckIfAlreadyAppliedForJob :one
+SELECT EXISTS(
+    SELECT student_id
+    FROM student_job_application_table
+    WHERE job_id = $1
+    AND student_id = $2
+)
+`
+
+type CheckIfAlreadyAppliedForJobParams struct {
+	JobID     int32 `json:"job_id"`
+	StudentID int32 `json:"student_id"`
+}
+
+func (q *Queries) CheckIfAlreadyAppliedForJob(ctx context.Context, arg CheckIfAlreadyAppliedForJobParams) (bool, error) {
+	row := q.db.QueryRow(ctx, checkIfAlreadyAppliedForJob, arg.JobID, arg.StudentID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const checkIfAppliedForJobAlready = `-- name: CheckIfAppliedForJobAlready :one
 SELECT EXISTS(
     SELECT job_id
@@ -74,7 +95,7 @@ func (q *Queries) GetAlreadyAppliedJobIds(ctx context.Context, studentID int32) 
 }
 
 const getAlreadyAppliedJobs = `-- name: GetAlreadyAppliedJobs :many
-SELECT j.job_id, job_role, job_type, ctc, salary_tier, apply_by_date, cgpa_cutoff, eligible_batch, eligible_branches
+SELECT j.job_id, job_role, job_description, job_type, ctc, salary_tier, apply_by_date, cgpa_cutoff, eligible_batch, eligible_branches
 FROM student_job_application_table as sj
 JOIN job_table as j
 ON sj.job_id = j.job_id
@@ -84,6 +105,7 @@ WHERE sj.student_id = $1
 type GetAlreadyAppliedJobsRow struct {
 	JobID            int32            `json:"job_id"`
 	JobRole          string           `json:"job_role"`
+	JobDescription   string           `json:"job_description"`
 	JobType          string           `json:"job_type"`
 	Ctc              float32          `json:"ctc"`
 	SalaryTier       string           `json:"salary_tier"`
@@ -105,6 +127,7 @@ func (q *Queries) GetAlreadyAppliedJobs(ctx context.Context, studentID int32) ([
 		if err := rows.Scan(
 			&i.JobID,
 			&i.JobRole,
+			&i.JobDescription,
 			&i.JobType,
 			&i.Ctc,
 			&i.SalaryTier,
@@ -194,7 +217,7 @@ func (q *Queries) GetJobOffers(ctx context.Context, studentID int32) ([]*GetJobO
 }
 
 const getJobs = `-- name: GetJobs :many
-SELECT job_id, job_role, ctc, salary_tier, apply_by_date, cgpa_cutoff, company_name, industry,
+SELECT job_id, job_role, job_description, ctc, salary_tier, apply_by_date, cgpa_cutoff, company_name, industry,
        (CASE WHEN
                  cgpa_cutoff <= (SELECT cgpa FROM student_table WHERE student_id = $1) THEN TRUE
              ELSE FALSE
@@ -219,15 +242,16 @@ type GetJobsParams struct {
 }
 
 type GetJobsRow struct {
-	JobID       int32            `json:"job_id"`
-	JobRole     string           `json:"job_role"`
-	Ctc         float32          `json:"ctc"`
-	SalaryTier  string           `json:"salary_tier"`
-	ApplyByDate pgtype.Timestamp `json:"apply_by_date"`
-	CgpaCutoff  float32          `json:"cgpa_cutoff"`
-	CompanyName string           `json:"company_name"`
-	Industry    string           `json:"industry"`
-	CanApply    bool             `json:"can_apply"`
+	JobID          int32            `json:"job_id"`
+	JobRole        string           `json:"job_role"`
+	JobDescription string           `json:"job_description"`
+	Ctc            float32          `json:"ctc"`
+	SalaryTier     string           `json:"salary_tier"`
+	ApplyByDate    pgtype.Timestamp `json:"apply_by_date"`
+	CgpaCutoff     float32          `json:"cgpa_cutoff"`
+	CompanyName    string           `json:"company_name"`
+	Industry       string           `json:"industry"`
+	CanApply       bool             `json:"can_apply"`
 }
 
 func (q *Queries) GetJobs(ctx context.Context, arg GetJobsParams) ([]*GetJobsRow, error) {
@@ -248,6 +272,7 @@ func (q *Queries) GetJobs(ctx context.Context, arg GetJobsParams) ([]*GetJobsRow
 		if err := rows.Scan(
 			&i.JobID,
 			&i.JobRole,
+			&i.JobDescription,
 			&i.Ctc,
 			&i.SalaryTier,
 			&i.ApplyByDate,

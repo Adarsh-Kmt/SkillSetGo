@@ -34,6 +34,7 @@ func (sh *StudentHandler) MuxSetup(router *mux.Router) *mux.Router {
 	router.HandleFunc("/student/{student-id}/profile", helper.MakeAuthenticatedHandler(helper.MakeHttpHandlerFunc(sh.GetStudentProfile))).Methods("GET")
 	router.HandleFunc("/student/job/apply", helper.MakeAuthorizedHandler(helper.MakeHttpHandlerFunc(sh.GetAlreadyAppliedJobs), studentRoleRequired)).Methods("GET")
 
+	router.HandleFunc("/student/job/interview", helper.MakeAuthorizedHandler(helper.MakeHttpHandlerFunc(sh.GetScheduledInterviews), studentRoleRequired)).Methods("GET")
 	return router
 }
 
@@ -178,5 +179,22 @@ func (sh *StudentHandler) GetAlreadyAppliedJobs(w http.ResponseWriter, r *http.R
 
 	helper.WriteJSON(w, 200, map[string]any{"jobs": appliedJobs})
 
+	return nil
+}
+
+func (sh *StudentHandler) GetScheduledInterviews(w http.ResponseWriter, r *http.Request) *helper.HTTPError {
+
+	studentId, httpError := helper.ValidateAccessToken(r.Header.Get("Auth"))
+	if httpError != nil {
+		return httpError
+	}
+
+	interviews, httpError := sh.studentService.GetScheduledInterviews(studentId)
+
+	if httpError != nil {
+		return httpError
+	}
+
+	helper.WriteJSON(w, 200, map[string]any{"interviews": interviews})
 	return nil
 }

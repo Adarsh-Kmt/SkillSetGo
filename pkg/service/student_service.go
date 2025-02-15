@@ -22,6 +22,8 @@ type StudentService interface {
 	GetJobs(studentId int, salaryTierFilter []string, jobRoleFilter []string, companyFilter []string) (jobs []*sqlc.GetJobsRow, httpError *helper.HTTPError)
 	GetStudentProfile(studentId int) (profile *sqlc.GetStudentProfileRow, httpError *helper.HTTPError)
 	GetAlreadyAppliedJobs(studentId int) (jobs []*sqlc.GetAlreadyAppliedJobsRow, httpError *helper.HTTPError)
+
+	GetScheduledInterviews(studentId int) (interviews []*sqlc.GetInterviewsScheduledForStudentRow, httpError *helper.HTTPError)
 }
 
 type StudentServiceImpl struct {
@@ -162,6 +164,16 @@ func (service *StudentServiceImpl) GetStudentProfile(studentId int) (profile *sq
 func (service *StudentServiceImpl) GetAlreadyAppliedJobs(studentId int) (jobs []*sqlc.GetAlreadyAppliedJobsRow, httpError *helper.HTTPError) {
 
 	rows, err := db.Client.GetAlreadyAppliedJobs(context.TODO(), int32(studentId))
+	if err != nil {
+		return nil, &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
+	}
+	return rows, nil
+}
+
+func (service *StudentServiceImpl) GetScheduledInterviews(studentId int) (interviews []*sqlc.GetInterviewsScheduledForStudentRow, httpError *helper.HTTPError) {
+
+	rows, err := db.Client.GetInterviewsScheduledForStudent(context.TODO(), int32(studentId))
+
 	if err != nil {
 		return nil, &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
 	}
