@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Placement Stats</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <h1>Placement Stats</h1>
+    <div id="charts-container">
+        <div style="width: 600px; height: 400px; margin-bottom: 20px;">
+            <canvas id="mean-package-chart"></canvas>
+        </div>
+        <div style="width: 600px; height: 400px; margin-bottom: 20px;">
+            <canvas id="offers-chart"></canvas>
+        </div>
+    </div>
+    <div id="summary-container">
+        <h2>Summary</h2>
+        <p id="summary-text"></p>
+    </div>
+    <button onclick="exportPDF()">Export as PDF</button>
+
+    <script>
+        const stats = {{ stats | tojson }};
+        
+        // Prepare data for charts
+        const branches = stats.map(stat => stat.branch);
+        const meanPackages = stats.map(stat => stat.mean_lpa);
+        const offers = stats.map(stat => stat.number_of_offers);
+
+        // Function to create a chart
+        function createChart(ctx, label, data, chartLabel) {
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: label,
+                    datasets: [{
+                        label: chartLabel,
+                        data: data,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create mean package chart
+        const meanPackageCtx = document.getElementById('mean-package-chart').getContext('2d');
+        createChart(meanPackageCtx, branches, meanPackages, 'Mean Package (LPA)');
+
+        // Create offers chart
+        const offersCtx = document.getElementById('offers-chart').getContext('2d');
+        createChart(offersCtx, branches, offers, 'Number of Offers');
+
+        // Generate summary text
+        const summaryText = stats.map(stat => 
+            `Branch: ${stat.branch}, Mean Package: ${stat.mean_lpa} LPA, Number of Offers: ${stat.number_of_offers}`
+        ).join('<br>');
+        document.getElementById('summary-text').innerHTML = summaryText;
+
+        // Function to export charts and summary as PDF
+        function exportPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFontSize(18);
+            doc.text('RV College of Engineering', 10, 10);
+            doc.setFontSize(14);
+            doc.text('Placement Statistics', 10, 20);
+
+            // Add mean package chart
+            doc.setFontSize(16);
+            doc.text('Mean Package (LPA)', 10, 30);
+            doc.addImage(meanPackageCtx.canvas.toDataURL('image/png'), 'PNG', 10, 40, 180, 100);
+
+            // Add offers chart
+            doc.text('Number of Offers', 10, 150);
+            doc.addImage(offersCtx.canvas.toDataURL('image/png'), 'PNG', 10, 160, 180, 100);
+
+            // Add summary
+            doc.addPage();
+            doc.setFontSize(16);
+            doc.text('Summary', 10, 10);
+            doc.setFontSize(12);
+            doc.text(summaryText.replace(/<br>/g, '\n'), 10, 20);
+
+            doc.save('placement_stats.pdf');
+        }
+    </script>
+</body>
+</html>
