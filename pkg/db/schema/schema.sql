@@ -59,8 +59,6 @@ CREATE TABLE student_job_interview_table(
     job_id INT NOT NULL,
     venue VARCHAR(50) NOT NULL,
     interview_date TIMESTAMP NOT NULL,
-    interview_round INT NOT NULL,
-    result VARCHAR(15) NOT NULL,
     FOREIGN KEY(student_id) REFERENCES student_table(student_id),
     FOREIGN KEY(job_id) REFERENCES job_table(job_id)
 );
