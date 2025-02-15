@@ -86,6 +86,7 @@ func (service *StudentServiceImpl) GetJobs(studentId int, salaryTierFilter []str
 
 	if hasOpenDreamOffer {
 		params.DoNotShowSalaryTierFilter = append(params.DoNotShowSalaryTierFilter, "Open Dream")
+		params.DoNotShowSalaryTierFilter = append(params.DoNotShowSalaryTierFilter, "Dream")
 	}
 	if hasDreamOffer {
 		params.DoNotShowSalaryTierFilter = append(params.DoNotShowSalaryTierFilter, "Dream")
