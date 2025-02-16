@@ -52,7 +52,14 @@
         {% endif %}
     </div>
 </div>
-
+<style>
+    .text-accepted {
+        color: green !important;
+    }
+    .text-rejected {
+        color: red !important;
+    }
+</style>
 <!-- Job Offers Section -->
 {% if job_offers %}
 <div class="card mb-4">
@@ -79,7 +86,7 @@
             </div>
             {% else %}
             <p class="mb-0 mt-2">
-                <span class="badge {% if offer.action == 'ACCEPTED' %}bg-success{% else %}bg-danger{% endif %}">
+                <span class="badge {% if offer.action == 'ACCEPTED' %}text-accepted{% elif offer.action == 'REJECTED' %}text-rejected{% else %}bg-danger{% endif %}">
                     {{ offer.action }}
                 </span>
             </p>
@@ -100,6 +107,7 @@
         {% for job in applied_jobs %}
         <div class="job-card mb-3 p-3 border rounded">
             <h6>{{ job.job_role }}</h6>
+            <p class="mb-2">Company: {{ job.company_name }}</p>
             <p class="mb-2">Package: ₹{{ job.ctc }} LPA</p>
             <p class="mb-2">Type: {{ job.job_type }}</p>
             <p class="mb-2">Tier: {{ job.salary_tier }}</p>
