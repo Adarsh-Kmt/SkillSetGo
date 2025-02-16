@@ -18,7 +18,8 @@ import (
 type StudentService interface {
 	ApplyForJob(studentId int, jobId int) (httpError *helper.HTTPError)
 	GetJobOffers(studentId int) (offers []response.JobOfferResponse, httpError *helper.HTTPError)
-	PerformJobOfferAction(studentId int, request entity.PerformJobOfferActionRequest) (httpError *helper.HTTPError)
+	AcceptJobOffer(studentId int, request entity.PerformJobOfferActionRequest) (httpError *helper.HTTPError)
+	RejectJobOffer(studentId int, request entity.PerformJobOfferActionRequest) (httpError *helper.HTTPError)
 	GetJobs(studentId int, salaryTierFilter []string, jobRoleFilter []string, companyFilter []string) (jobs []*sqlc.GetJobsRow, httpError *helper.HTTPError)
 	GetStudentProfile(studentId int) (profile *sqlc.GetStudentProfileRow, httpError *helper.HTTPError)
 	GetAlreadyAppliedJobs(studentId int) (jobs []*sqlc.GetAlreadyAppliedJobsRow, httpError *helper.HTTPError)
@@ -165,22 +166,102 @@ func (service *StudentServiceImpl) GetJobOffers(studentId int) (offers []respons
 	return offers, nil
 }
 
-func (service *StudentServiceImpl) PerformJobOfferAction(studentId int, request entity.PerformJobOfferActionRequest) (httpError *helper.HTTPError) {
+func (service *StudentServiceImpl) AcceptJobOffer(studentId int, request entity.PerformJobOfferActionRequest) (httpError *helper.HTTPError) {
 
-	var (
-		actByDate time.Time
-	)
-	params1 := sqlc.GetJobOfferActByDateParams{
+	params1 := sqlc.GetJobOfferParams{
 		StudentID: int32(studentId),
 		JobID:     int32(request.JobId),
 	}
-	if actByDatePgxTimestamp, err := db.Client.GetJobOfferActByDate(context.TODO(), params1); err != nil {
+	jobOfferRow, err := db.Client.GetJobOffer(context.TODO(), params1)
+
+	if err != nil {
 		return &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
-	} else {
-		actByDate = actByDatePgxTimestamp.Time
 	}
 
-	if time.Now().After(actByDate) {
+	if time.Now().After(jobOfferRow.ActByDate.Time) {
+		return &helper.HTTPError{StatusCode: 400, Error: "act_by_date expired"}
+	}
+
+	rejectOpenDreamOffers := false
+	rejectDreamOffers := false
+	rejectInternshipOffers := false
+
+	if jobOfferRow.SalaryTier == "Dream" {
+		rejectDreamOffers = true
+	}
+	if jobOfferRow.JobType == "Internship" {
+		rejectInternshipOffers = true
+	}
+	if jobOfferRow.SalaryTier == "Open Dream" {
+		rejectOpenDreamOffers = true
+		rejectDreamOffers = true
+	}
+
+	params2 := sqlc.PerformJobOfferActionParams{
+		StudentID: int32(studentId),
+		JobID:     int32(request.JobId),
+		Action:    request.Action,
+	}
+	if err := db.Client.PerformJobOfferAction(context.TODO(), params2); err != nil {
+		return &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
+	}
+
+	pendingJobOffers, err := db.Client.GetPendingOffers(context.TODO(), int32(studentId))
+
+	if err != nil {
+		return &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
+	}
+
+	for _, pendingJobOffer := range pendingJobOffers {
+
+		if pendingJobOffer.JobType == "Internship" && rejectInternshipOffers {
+
+			rejectOfferParams := sqlc.RejectOfferParams{
+				StudentID: int32(studentId),
+				JobID:     pendingJobOffer.JobID,
+			}
+			err := db.Client.RejectOffer(context.TODO(), rejectOfferParams)
+			if err != nil {
+				return &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
+			}
+		} else if pendingJobOffer.SalaryTier == "Dream" && rejectDreamOffers {
+
+			rejectOfferParams := sqlc.RejectOfferParams{
+				StudentID: int32(studentId),
+				JobID:     pendingJobOffer.JobID,
+			}
+			err := db.Client.RejectOffer(context.TODO(), rejectOfferParams)
+			if err != nil {
+				return &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
+			}
+		} else if pendingJobOffer.SalaryTier == "Open Dream" && rejectOpenDreamOffers {
+
+			rejectOfferParams := sqlc.RejectOfferParams{
+				StudentID: int32(studentId),
+				JobID:     pendingJobOffer.JobID,
+			}
+			err := db.Client.RejectOffer(context.TODO(), rejectOfferParams)
+			if err != nil {
+				return &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
+			}
+		}
+	}
+	return nil
+}
+
+func (service *StudentServiceImpl) RejectJobOffer(studentId int, request entity.PerformJobOfferActionRequest) (httpError *helper.HTTPError) {
+
+	params1 := sqlc.GetJobOfferParams{
+		StudentID: int32(studentId),
+		JobID:     int32(request.JobId),
+	}
+	jobOfferRow, err := db.Client.GetJobOffer(context.TODO(), params1)
+
+	if err != nil {
+		return &helper.HTTPError{StatusCode: 500, Error: "internal server error"}
+	}
+
+	if time.Now().After(jobOfferRow.ActByDate.Time) {
 		return &helper.HTTPError{StatusCode: 400, Error: "act_by_date expired"}
 	}
 
@@ -194,7 +275,6 @@ func (service *StudentServiceImpl) PerformJobOfferAction(studentId int, request 
 	}
 	return nil
 }
-
 func (service *StudentServiceImpl) GetStudentProfile(studentId int) (profile *sqlc.GetStudentProfileRow, httpError *helper.HTTPError) {
 
 	row, err := db.Client.GetStudentProfile(context.TODO(), int32(studentId))
