@@ -146,6 +146,36 @@
 </div>
 {% endif %}
 
+<!-- Scheduled Interviews Section -->
+{% if interviews %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Scheduled Interviews</h5>
+    </div>
+    <div class="card-body">
+        {% for interview in interviews %}
+        <div class="interview-card mb-3 p-3 border rounded">
+            <h6>{{ interview.company_name }}</h6>
+            <p class="mb-2"><strong>Date and Time:</strong> {{ interview.interview_date }}</p>
+            <!-- <p class="mb-2"><strong>Time:</strong> {{ interview.interview_time }}</p> -->
+            <p class="mb-2"><strong>Location:</strong> {{ interview.venue }}</p>
+            <p class="mb-2"><strong>Job Role:</strong> {{ interview.job_role }}</p>
+            <p class="mb-2"><strong>Package:</strong> ₹{{ interview.ctc }} LPA</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Scheduled Interviews</h5>
+    </div>
+    <div class="card-body">
+        <p>No interviews scheduled yet.</p>
+    </div>
+</div>
+{% endif %}
+
 <!-- Job Application Confirmation Modal -->
 <div class="modal fade" id="jobApplicationModal" tabindex="-1">
     <div class="modal-dialog">

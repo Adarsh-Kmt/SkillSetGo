@@ -361,12 +361,19 @@ def dashboard():
         print(f"Job offers: {job_offers}")
         print(f"Jobs: {jobs}")
 
+       
+        headers = get_auth_header()
+        response = requests.get(f"{API_URL}/student/job/interview", headers=headers)
+        interviews = response.json().get('interviews', []) if response.status_code == 200 else []
+
+            # Render the template with interview data
         return render_template('dashboard.html', 
-                             profile=profile,
-                             applied_jobs=applied_jobs,
-                             job_offers=job_offers,
-                             is_placed=any(job.get('status') == 'Accepted' for job in (applied_jobs or [])),
-                             jobs=jobs)
+                            profile=profile,
+                            applied_jobs=applied_jobs,
+                            job_offers=job_offers,
+                            is_placed=any(job.get('status') == 'Accepted' for job in (applied_jobs or [])),
+                            interviews=interviews,
+                            jobs=jobs)
 
     except Exception as e:
         print(f"Error in student dashboard: {str(e)}")
@@ -1251,8 +1258,29 @@ def match_resume():
         profile = profile_response.json().get('profile', {})
         
         return render_template('match_resume.html', score=score, message=m, resume_text=r, job_description=job_description, profile=profile)
-
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error fetching interview details: {str(e)}")
+        return jsonify({'error': 'An unexpected error occurred'}), 500
+            
+@app.route('/student/job/interview')
+def get_scheduled_interviews():
+    if 'access_token' not in session:
+        return jsonify({'error': 'Please log in first'}), 401
+
+    headers = get_auth_header()
+    if not headers:
+        return jsonify({'error': 'Session expired'}), 401
+
+    try:
+        # Fetch interview details from the backend
+        response = requests.get(f"{API_URL}/student/job/interview", headers=headers)
+        if response.status_code == 200:
+            interview_data = response.json()
+            return jsonify(interview_data)
+        # else:
+        #     return jsonify({'error': 'Failed to fetch interview details'}), response.status_code
+    except Exception as e:
+        print(f"Error fetching interview details: {str(e)}")
+        return jsonify({'error': 'An unexpected error occurred'}), 500
 if __name__ == '__main__':
     app.run(debug=True)
