@@ -9,6 +9,7 @@ sql:
     engine: postgresql
     database:
       uri: postgresql://postgres:@neeshpostgres@localhost:8087/skillsetgo
+
     gen:
       go:
         sql_package: "pgx/v5"

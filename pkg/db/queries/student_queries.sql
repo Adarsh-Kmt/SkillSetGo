@@ -16,8 +16,7 @@ FROM student_offer_table JOIN job_table
 ON student_offer_table.job_id = job_table.job_id
 JOIN company_table
 ON job_table.company_id = company_table.company_id
-WHERE student_id = sqlc.arg(student_id)
-AND action = 'PENDING';
+WHERE student_id = sqlc.arg(student_id);
 
 -- name: GetJobOffer :one
 SELECT job_type, salary_tier, act_by_date
@@ -40,11 +39,8 @@ SELECT job_id, job_role, job_description, ctc, salary_tier, apply_by_date, cgpa_
            END) AS can_apply
 FROM job_table JOIN company_table
                     ON job_table.company_id = company_table.company_id
-WHERE (COALESCE(array_length(sqlc.arg(salary_tier_filter)::VARCHAR[], 1), 0) = 0 OR salary_tier = ANY(sqlc.arg(salary_tier_filter)))
-  AND (COALESCE(array_length(sqlc.arg(do_not_show_salary_tier_filter)::VARCHAR[], 1), 0) = 0 OR salary_tier <> ANY(sqlc.arg(do_not_show_salary_tier_filter)))
-  AND (COALESCE(array_length(sqlc.arg(job_role_filter)::VARCHAR[], 1), 0) = 0 OR job_role = ANY(sqlc.arg(job_role_filter)))
-  AND (COALESCE(array_length(sqlc.arg(do_not_show_job_type_filter)::VARCHAR[], 1), 0) = 0 OR job_role <> ANY(sqlc.arg(do_not_show_job_type_filter)))
-  AND (COALESCE(array_length(sqlc.arg(company_name_filter)::VARCHAR[], 1), 0) = 0 OR company_name = ANY(sqlc.arg(company_name_filter)))
+  WHERE (COALESCE(array_length(sqlc.arg(do_not_show_salary_tier_filter)::VARCHAR[], 1), 0) = 0 OR salary_tier NOT IN (SELECT unnest(sqlc.arg(do_not_show_salary_tier_filter))))
+  AND (COALESCE(array_length(sqlc.arg(do_not_show_job_type_filter)::VARCHAR[], 1), 0) = 0 OR job_role NOT IN (SELECT unnest(sqlc.arg(do_not_show_job_type_filter))))
   AND NOW() < apply_by_date
   AND (COALESCE(array_length(sqlc.arg(already_applied_job_id)::INT[], 1), 0) = 0 OR job_id <> ANY(sqlc.arg(already_applied_job_id)))
   AND ARRAY(SELECT branch FROM student_table WHERE student_id = sqlc.arg(student_id)) && eligible_branches
@@ -65,10 +61,12 @@ SELECT EXISTS(
 );
 
 -- name: GetAlreadyAppliedJobs :many
-SELECT j.job_id, job_role, job_description, job_type, ctc, salary_tier, apply_by_date, cgpa_cutoff, eligible_batch, eligible_branches
+SELECT j.job_id, job_role, job_description, job_type, ctc, salary_tier, apply_by_date, cgpa_cutoff, eligible_batch, eligible_branches, company_name
 FROM student_job_application_table as sj
 JOIN job_table as j
 ON sj.job_id = j.job_id
+JOIN company_table as c
+ON j.job_id = c.company_id
 WHERE sj.student_id = sqlc.arg(student_id);
 
 -- name: GetAlreadyAppliedJobIds :many
