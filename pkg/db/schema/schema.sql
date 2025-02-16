@@ -59,6 +59,11 @@ CREATE TABLE student_job_interview_table(
     job_id INT NOT NULL,
     venue VARCHAR(50) NOT NULL,
     interview_date TIMESTAMP NOT NULL,
+<<<<<<< Updated upstream
+=======
+    -- interview_round INT,
+    -- result VARCHAR(15) ,
+>>>>>>> Stashed changes
     FOREIGN KEY(student_id) REFERENCES student_table(student_id),
     FOREIGN KEY(job_id) REFERENCES job_table(job_id)
 );
