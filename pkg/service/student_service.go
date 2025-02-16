@@ -77,9 +77,6 @@ func (service *StudentServiceImpl) GetJobs(studentId int, salaryTierFilter []str
 
 	params := sqlc.GetJobsParams{
 		StudentID:                 &studentIdParam,
-		SalaryTierFilter:          salaryTierFilter,
-		JobRoleFilter:             jobRoleFilter,
-		CompanyNameFilter:         companyFilter,
 		AlreadyAppliedJobID:       alreadyAppliedJobIdList,
 		DoNotShowSalaryTierFilter: make([]string, 0),
 		DoNotShowJobTypeFilter:    make([]string, 0),
