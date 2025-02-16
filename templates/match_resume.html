@@ -1,100 +1,97 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Match Results</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f8f9fa;
-            color: #212529;
-        }
-        .container {
-            max-width: 800px;
-            margin: 50px auto;
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,.1);
-        }
-        h1 {
-            margin-bottom: 30px;
-            color: #0d6efd;
-            text-align: center;
-        }
-        p {
-            font-size: 16px;
-            line-height: 1.5;
-        }
-        a {
-            color: #0d6efd;
-            text-decoration: none;
-            font-weight: bold;
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #ffffff;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-        a:hover {
-            background-color: #f8f9fa;
-        }
-        #result {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 4px;
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-        }
-        button {
-            width: auto;
-            padding: 10px 20px;
-            margin: 20px 0;
-            background-color: #0d6efd;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #0b5ed7;
-        }
-    </style>
-</head>
-<body>
-    <div class="container" id="result-container">
-        <h1>Match Results</h1>
-        <p><strong>Score:</strong> {{ score }}/10</p>
-        <p><strong>Message:</strong> {{ message }}</p>
-        <h2>Student Profile:</h2>
-        <p><strong>Name:</strong> {{ profile.name }}</p>
-        <p><strong>Email:</strong> {{ profile.email_id }}</p>
-        <p><strong>Branch:</strong> {{ profile.branch }}</p>
-        <p><strong>CGPA:</strong> {{ profile.cgpa }}</p>
-        <h2>Resume Text:</h2>
-        <p>{{ resume_text }}</p>
-        <h2>Job Description:</h2>
-        <p>{{ job_description }}</p>
-        <button onclick="exportPDF()">Export to PDF</button>
-        <a href="/">Go Back</a>
+{% extends 'base.html' %}
+
+{% block content %}
+<div id="result-container">
+    <div class="container mt-4">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h4 class="card-title">Match Results</h4>
+                <p><strong>Score:</strong> {{ score }}/10</p>
+                <p><strong>Message:</strong> {{ message }}</p>
+            </div>
+        </div>
+        
+        <div class="card mb-3">
+            <div class="card-body">
+                <h4 class="card-title">Candidate Information</h4>
+                <p><strong>Name:</strong> {{ profile.name }}</p>
+                <p><strong>Email:</strong> {{ profile.email_id }}</p>
+                <p><strong>Branch:</strong> {{ profile.branch }}</p>
+                <p><strong>CGPA:</strong> {{ profile.cgpa }}</p>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h4 class="card-title">Summary</h4>
+                <p>{{ resume_data.get('summary', 'No summary available.') }}</p>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h4 class="card-title">Education</h4>
+                {% for edu in resume_data.get('education', []) %}
+                    <p><strong>{{ edu.get('degree', 'N/A') }}</strong> - {{ edu.get('institution', 'Unknown Institution') }} ({{ edu.get('year', 'N/A') }})</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h4 class="card-title">Experience</h4>
+                {% for exp in resume_data.get('experience', []) %}
+                    <p><strong>{{ exp.get('position', 'N/A') }}</strong> at {{ exp.get('company', 'Unknown Company') }} ({{ exp.get('duration', 'N/A') }})</p>
+                    <p>{{ exp.get('description', 'No description available.') }}</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h4 class="card-title">Projects</h4>
+                {% for project in resume_data.get('projects', []) %}
+                    <p><strong>{{ project.get('title', 'N/A') }}</strong></p>
+                    <p>{{ project.get('description', 'No details available.') }}</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h4 class="card-title">Skills</h4>
+                <p>{{ ", ".join(resume_data.get('skills', [])) }}</p>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h4 class="card-title">Certifications</h4>
+                {% for cert in resume_data.get('certifications', []) %}
+                    <p><strong>{{ cert.get('name', 'N/A') }}</strong> - {{ cert.get('year', 'N/A') }}</p>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <button onclick="downloadPDF()" class="btn btn-primary">Download PDF</button>
+        </div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
-    <script>
-        function exportPDF() {
-            const element = document.getElementById('result-container');
-            html2pdf(element, {
-                margin: 1,
-                filename: 'resume_matcher_result.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-            });
-        }
-    </script>
-</body>
-</html>
+</div>
+
+<!-- Ensure html2pdf is included -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+
+<script>
+    function downloadPDF() {
+        const element = document.getElementById('result-container');
+        html2pdf(element, {
+            margin: 1,
+            filename: 'resume_matcher_result.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+        });
+    }
+</script>
+{% endblock %}
