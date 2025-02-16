@@ -146,23 +146,31 @@ func (q *Queries) GetAlreadyAppliedJobs(ctx context.Context, studentID int32) ([
 	return items, nil
 }
 
-const getJobOfferActByDate = `-- name: GetJobOfferActByDate :one
-SELECT act_by_date 
-FROM student_offer_table
+const getJobOffer = `-- name: GetJobOffer :one
+SELECT job_type, salary_tier, act_by_date
+FROM student_offer_table AS so
+JOIN job_table AS j
+ON so.job_id = j.job_id
 WHERE student_id = $1 
-AND job_id = $2
+AND so.job_id = $2
 `
 
-type GetJobOfferActByDateParams struct {
+type GetJobOfferParams struct {
 	StudentID int32 `json:"student_id"`
 	JobID     int32 `json:"job_id"`
 }
 
-func (q *Queries) GetJobOfferActByDate(ctx context.Context, arg GetJobOfferActByDateParams) (pgtype.Timestamp, error) {
-	row := q.db.QueryRow(ctx, getJobOfferActByDate, arg.StudentID, arg.JobID)
-	var act_by_date pgtype.Timestamp
-	err := row.Scan(&act_by_date)
-	return act_by_date, err
+type GetJobOfferRow struct {
+	JobType    string           `json:"job_type"`
+	SalaryTier string           `json:"salary_tier"`
+	ActByDate  pgtype.Timestamp `json:"act_by_date"`
+}
+
+func (q *Queries) GetJobOffer(ctx context.Context, arg GetJobOfferParams) (*GetJobOfferRow, error) {
+	row := q.db.QueryRow(ctx, getJobOffer, arg.StudentID, arg.JobID)
+	var i GetJobOfferRow
+	err := row.Scan(&i.JobType, &i.SalaryTier, &i.ActByDate)
+	return &i, err
 }
 
 const getJobOffers = `-- name: GetJobOffers :many
@@ -171,7 +179,8 @@ FROM student_offer_table JOIN job_table
 ON student_offer_table.job_id = job_table.job_id
 JOIN company_table
 ON job_table.company_id = company_table.company_id
-AND student_id = $1
+WHERE student_id = $1
+AND action = 'PENDING'
 `
 
 type GetJobOffersRow struct {
@@ -330,6 +339,54 @@ func (q *Queries) GetOfferedJobInfo(ctx context.Context, studentID int32) ([]*Ge
 	return items, nil
 }
 
+const getPendingOffers = `-- name: GetPendingOffers :many
+SELECT so.job_id, salary_tier, job_type
+FROM student_offer_table as so
+JOIN job_table as j
+ON so.job_id = j.job_id
+WHERE student_id = $1
+AND action = 'PENDING'
+`
+
+type GetPendingOffersRow struct {
+	JobID      int32  `json:"job_id"`
+	SalaryTier string `json:"salary_tier"`
+	JobType    string `json:"job_type"`
+}
+
+func (q *Queries) GetPendingOffers(ctx context.Context, studentID int32) ([]*GetPendingOffersRow, error) {
+	rows, err := q.db.Query(ctx, getPendingOffers, studentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetPendingOffersRow
+	for rows.Next() {
+		var i GetPendingOffersRow
+		if err := rows.Scan(&i.JobID, &i.SalaryTier, &i.JobType); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getSalaryTierJobType = `-- name: GetSalaryTierJobType :exec
+SELECT j.job_id, job_type, salary_tier
+FROM student_offer_table AS so
+JOIN job_table AS j
+ON so.job_id = j.job_id
+WHERE student_id = $1
+`
+
+func (q *Queries) GetSalaryTierJobType(ctx context.Context, studentID int32) error {
+	_, err := q.db.Exec(ctx, getSalaryTierJobType, studentID)
+	return err
+}
+
 const getStudentProfile = `-- name: GetStudentProfile :one
 SELECT name, usn, branch, cgpa, batch, num_active_backlogs, email_id, counsellor_email_id
 FROM student_table
@@ -377,5 +434,22 @@ type PerformJobOfferActionParams struct {
 
 func (q *Queries) PerformJobOfferAction(ctx context.Context, arg PerformJobOfferActionParams) error {
 	_, err := q.db.Exec(ctx, performJobOfferAction, arg.StudentID, arg.JobID, arg.Action)
+	return err
+}
+
+const rejectOffer = `-- name: RejectOffer :exec
+UPDATE student_offer_table
+SET action = 'REJECT'
+WHERE job_id = $1
+AND student_id = $2
+`
+
+type RejectOfferParams struct {
+	JobID     int32 `json:"job_id"`
+	StudentID int32 `json:"student_id"`
+}
+
+func (q *Queries) RejectOffer(ctx context.Context, arg RejectOfferParams) error {
+	_, err := q.db.Exec(ctx, rejectOffer, arg.JobID, arg.StudentID)
 	return err
 }

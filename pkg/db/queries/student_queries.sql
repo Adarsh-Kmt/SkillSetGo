@@ -16,13 +16,16 @@ FROM student_offer_table JOIN job_table
 ON student_offer_table.job_id = job_table.job_id
 JOIN company_table
 ON job_table.company_id = company_table.company_id
-AND student_id = $1;
+WHERE student_id = sqlc.arg(student_id)
+AND action = 'PENDING';
 
--- name: GetJobOfferActByDate :one
-SELECT act_by_date 
-FROM student_offer_table
+-- name: GetJobOffer :one
+SELECT job_type, salary_tier, act_by_date
+FROM student_offer_table AS so
+JOIN job_table AS j
+ON so.job_id = j.job_id
 WHERE student_id = $1 
-AND job_id = $2;
+AND so.job_id = $2;
 
 -- name: PerformJobOfferAction :exec
 UPDATE student_offer_table SET action = $3, action_date = NOW() 
@@ -80,3 +83,25 @@ JOIN student_offer_table as so
 ON j.job_id = so.job_id
 WHERE so.student_id = sqlc.arg(student_id);
 
+
+-- name: GetSalaryTierJobType :exec
+SELECT j.job_id, job_type, salary_tier
+FROM student_offer_table AS so
+JOIN job_table AS j
+ON so.job_id = j.job_id
+WHERE student_id = sqlc.arg(student_id);
+
+
+-- name: RejectOffer :exec
+UPDATE student_offer_table
+SET action = 'REJECT'
+WHERE job_id = sqlc.arg(job_id)
+AND student_id = sqlc.arg(student_id);
+
+-- name: GetPendingOffers :many
+SELECT so.job_id, salary_tier, job_type
+FROM student_offer_table as so
+JOIN job_table as j
+ON so.job_id = j.job_id
+WHERE student_id = sqlc.arg(student_id)
+AND action = 'PENDING';

@@ -136,8 +136,14 @@ func (sh *StudentHandler) PerformJobOfferAction(w http.ResponseWriter, r *http.R
 		return httpError
 	}
 
-	if httpError = sh.studentService.PerformJobOfferAction(studentId, request); httpError != nil {
-		return httpError
+	if request.Action == "ACCEPT" {
+		if httpError = sh.studentService.AcceptJobOffer(studentId, request); httpError != nil {
+			return httpError
+		}
+	} else if request.Action == "REJECT" {
+		if httpError = sh.studentService.RejectJobOffer(studentId, request); httpError != nil {
+			return httpError
+		}
 	}
 
 	helper.WriteJSON(w, 200, map[string]string{"response": "action performed successfully"})

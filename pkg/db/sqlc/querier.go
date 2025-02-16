@@ -6,8 +6,6 @@ package sqlc
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
@@ -34,17 +32,20 @@ type Querier interface {
 	// AND job_id = sqlc.arg(job_id);
 	GetInterviewsScheduledForStudent(ctx context.Context, studentID int32) ([]*GetInterviewsScheduledForStudentRow, error)
 	GetJobApplicants(ctx context.Context, jobID int32) ([]*GetJobApplicantsRow, error)
-	GetJobOfferActByDate(ctx context.Context, arg GetJobOfferActByDateParams) (pgtype.Timestamp, error)
+	GetJobOffer(ctx context.Context, arg GetJobOfferParams) (*GetJobOfferRow, error)
 	GetJobOffers(ctx context.Context, studentID int32) ([]*GetJobOffersRow, error)
 	GetJobs(ctx context.Context, arg GetJobsParams) ([]*GetJobsRow, error)
 	GetOfferStatus(ctx context.Context, jobID int32) ([]*GetOfferStatusRow, error)
 	GetOfferedJobInfo(ctx context.Context, studentID int32) ([]*GetOfferedJobInfoRow, error)
+	GetPendingOffers(ctx context.Context, studentID int32) ([]*GetPendingOffersRow, error)
 	GetPlacementStats(ctx context.Context) ([]*GetPlacementStatsRow, error)
 	GetPublishedJobs(ctx context.Context, companyID int32) ([]*GetPublishedJobsRow, error)
+	GetSalaryTierJobType(ctx context.Context, studentID int32) error
 	GetStudentProfile(ctx context.Context, studentID int32) (*GetStudentProfileRow, error)
 	InsertUser(ctx context.Context, arg InsertUserParams) error
 	OfferJob(ctx context.Context, arg OfferJobParams) error
 	PerformJobOfferAction(ctx context.Context, arg PerformJobOfferActionParams) error
+	RejectOffer(ctx context.Context, arg RejectOfferParams) error
 	ScheduleInterview(ctx context.Context, arg ScheduleInterviewParams) error
 }
 
