@@ -46,7 +46,7 @@ func ValidateCreateJobRequest(request CreateJobRequest) (httpError *helper.HTTPE
 		errorMap["ctc"] = "ctc cannot be negative/zero"
 	}
 
-	if request.SalaryTier == "" || (request.SalaryTier != "Open Dream" && request.SalaryTier != "Dream" && request.SalaryTier != "Mass Recruitment") {
+	if request.SalaryTier == "" || (request.SalaryTier != "Open Dream" && request.SalaryTier != "Dream" && request.SalaryTier != "Internship") {
 		errorMap["salary_tier"] = "salary_tier cannot be empty, must be one of Open Dream, Dream, Mass Recruitment"
 	}
 
