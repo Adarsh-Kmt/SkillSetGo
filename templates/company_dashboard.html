@@ -3,6 +3,7 @@
 {% block title %}SkillSetGo - Company Dashboard{% endblock %}
 
 {% block content %}
+
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script> 
 <div class="container mt-4">
     <div class="row">
@@ -282,7 +283,17 @@
 {% block scripts %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-
+<style>
+    .text-pending {
+        color: blue !important;
+    }
+    .text-accepted {
+        color: green !important;
+    }
+    .text-rejected {
+        color: red !important;
+    }
+</style>
 <script>
 function viewInterviewStatus(jobId) {
     fetch(`/company/job/${jobId}/interview`)
@@ -556,7 +567,6 @@ function rejectApplication(jobId, studentId) {
         alert(error.message || 'Failed to reject application');
     });
 }
-
 function viewOfferStatus(jobId) {
     console.log('Fetching offer status for job:', jobId);
     fetch(`/company/job/${jobId}/offer`)
@@ -591,7 +601,14 @@ function viewOfferStatus(jobId) {
                 
                 offers.forEach(offer => {
                     const actionDate = new Date(offer.action_date).toLocaleString();
-                    const statusClass = offer.action === 'accepted' ? 'text-success' : 'text-danger';
+                    let statusClass = '';
+                    if (offer.action.trim() === 'ACCEPT') {
+                        statusClass = 'text-accepted';
+                    } else if (offer.action.trim() === 'REJECT') {
+                        statusClass = 'text-rejected';
+                    } else {
+                        statusClass = 'text-pending';
+                    }
                     tableHtml += `
                         <tr>
                             <td>${offer.name || 'N/A'}</td>
