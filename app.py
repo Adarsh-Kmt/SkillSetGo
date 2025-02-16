@@ -1196,27 +1196,117 @@ def get_groq_score(resume_text, job_description):
 
 def beautify_text(text):
     client = Groq(api_key=GROQ_API)
+    
+    print("Sending text to Groq:", text[:200])  # Print first 200 chars of input
+    
     chat_completion = client.chat.completions.create(
         messages=[
             {
                 "role": "system",
-                "content": "Given the resume content, extract useful info and return it in a presentable format, dont't use markdown as I will be using it in a HTML page. Return in plain text. Don't use ** for bold, I will be displaying it using render_template of Flask. Use new line sequences"
+                "content": """You are an expert at parsing resume text into structured JSON. Given the resume content, extract and format the key information into a valid JSON object.
+                
+                Rules:
+                1. Output MUST be a single, valid JSON object
+                2. Do not include any text before or after the JSON
+                3. Use consistent formatting
+                4. Include all available information from the resume
+                
+                Expected structure:
+                {
+                    "name": "string",
+                    "contact": {
+                        "location": "string",
+                        "phone": "string",
+                        "email": "string",
+                        "linkedin": "string",
+                        "github": "string"
+                    },
+                    "summary": "string",
+                    "education": [
+                        {
+                            "institution": "string",
+                            "degree": "string",
+                            "expected_graduation": "string"
+                        }
+                    ],
+                    "experience": [
+                        {
+                            "company": "string",
+                            "role": "string",
+                            "duration": "string",
+                            "responsibilities": ["string"]
+                        }
+                    ],
+                    "projects": [
+                        {
+                            "title": "string",
+                            "description": "string",
+                            "link": "string"
+                        }
+                    ],
+                    "skills": {
+                        "languages": ["string"],
+                        "developer_tools": ["string"],
+                        "technologies": ["string"]
+                    }
+                }
+                
+                If any section has no information, omit it entirely rather than including empty values."""
             },
-            {   "role": "user",
+            {
+                "role": "user",
                 "content": text
             }
         ],
         model="llama3-8b-8192",
     )
-    return chat_completion.choices[0].message.content
+    
+    response = chat_completion.choices[0].message.content
+    print("Groq response:", response[:200])  # Print first 200 chars of response
+    
+    try:
+        # Make sure we have valid JSON
+        if not response.strip().startswith('{'):
+            # Try to find JSON in the response
+            start = response.find('{')
+            end = response.rfind('}') + 1
+            if start >= 0 and end > start:
+                response = response[start:end]
+        
+        json_data = json.loads(response)
+        print("Successfully parsed JSON")
+        return json_data
+    except json.JSONDecodeError as e:
+        print("JSON parsing error:", str(e))
+        # Return a basic structure if parsing fails
+        return {
+            "error": "Could not parse resume",
+            "raw_text": text
+        }
+def extract_json_from_text(text):
+    """
+    Extracts JSON content from a given text.
+    Ensures only valid JSON is returned.
+    """
+    try:
+        start = text.find('{')
+        end = text.rfind('}')
+        
+        if start == -1 or end == -1:
+            return None  # No JSON found
 
+        json_str = text[start:end+1]
+        return json.loads(json_str)  # Convert JSON string to dict
+
+    except json.JSONDecodeError:
+        return None  # Invalid JSON
 @app.route('/match_resume', methods=['POST'])
 def match_resume():
     if 'access_token' not in session:
         return redirect(url_for('login'))
     
     if 'resume' not in request.files or 'jobDescription' not in request.form:
-        return jsonify({'error': 'Please upload a resume and enter a job description.'}), 400
+        return {'error': 'Please upload a resume and enter a job description.'}, 400
 
     resume = request.files['resume']
     job_description = request.form['jobDescription']
@@ -1224,13 +1314,25 @@ def match_resume():
     try:
         # Extract text from resume PDF
         resume_text = extract_text_from_pdf(resume)
-        r = beautify_text(resume_text)
+        
+        # Get the structured data from Groq
+        beautified_text = beautify_text(resume_text)
+        
+        # Ensure we have valid JSON
+        if isinstance(beautified_text, str):
+            try:
+                beautified_text = json.loads(beautified_text)
+            except json.JSONDecodeError:
+                beautified_text = {"error": "Could not parse resume"}
         
         # Get score from Groq
-        message = get_groq_score(r, job_description)
+        message = get_groq_score(resume_text, job_description)
         score = message[1]
         m = message[0]
-        
+
+        # Debug print
+        print("Type of beautified_text:", type(beautified_text))
+        print("Content of beautified_text:", json.dumps(beautified_text, indent=2))
         # Extract student ID from token
         token = session['access_token']
         token_parts = token.split('.')
@@ -1249,10 +1351,18 @@ def match_resume():
         headers = {'Auth': session['access_token']}
         profile_response = requests.get(f"http://localhost:8080/student/{student_id}/profile", headers=headers)
         profile = profile_response.json().get('profile', {})
-        
-        return render_template('match_resume.html', score=score, message=m, resume_text=r, job_description=job_description, profile=profile)
+        return render_template(
+            'match_resume.html', 
+            score=score, 
+            message=m, 
+            resume_data=beautified_text,  # This should now be a proper dict
+            job_description=job_description,
+            profile=profile
+        )
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print("Error:", str(e))  # Debug print
+        return {'error': str(e)}, 500
+
 if __name__ == '__main__':
     app.run(debug=True)
