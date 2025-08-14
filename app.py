@@ -12,7 +12,12 @@ from groq import Groq
 
 
 load_dotenv()
-GROQ_API = "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"
+GROQ_API = os.getenv('GROQ_API_KEY')
+if not GROQ_API:
+    print("Warning: GROQ_API_KEY not found in environment variables")
+else:
+    print("Groq API key loaded successfully")
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'dev-key-123')
 
@@ -1203,44 +1208,56 @@ def extract_text_from_pdf(pdf_file):
     return text
 
 def get_groq_score(resume_text, job_description):
-    l=[]
-    client = Groq(api_key=GROQ_API)
-    chat_completion = client.chat.completions.create(
-        messages=[
-            {
-                "role": "system",
-                "content": "You are a helpful assistant which enables students to identify whether their skills are aligned with the job description. Your reply should be in the form of a feedback when given a resume content and JD. Both are separated by ******. Do not use bold formatting return in plain text. Do not include any score. Limit to 50 words."
-            },
-            {
-                "role": "user",
-                "content": resume_text + "******" + job_description
-            }
-        ],
-        model="llama3-8b-8192",
-    )
-    l.append(chat_completion.choices[0].message.content)
-    chat_completion = client.chat.completions.create(
-        messages=[
-            {
-                "role": "system",
-                "content": "You are a helpful assistant which enables students to identify whether their skills are aligned with the job description. Your reply should be in the form of a score out of 10 and only the score. Nothing else. Only the score. Return in plain text"+l[0]+"THis is the feedback provided ensure that the score matches feedback. Return only score"
-            },
-            {
-                "role": "user",
-                "content": resume_text + "******" + job_description
-            }
-        ],
-        model="llama3-8b-8192",
-    )
-    l.append(chat_completion.choices[0].message.content)
-    return l
+    if not GROQ_API:
+        return ["API key not configured", "0"]
+    
+    try:
+        l=[]
+        client = Groq(api_key=GROQ_API)
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a helpful assistant which enables students to identify whether their skills are aligned with the job description. Your reply should be in the form of a feedback when given a resume content and JD. Both are separated by ******. Do not use bold formatting return in plain text. Do not include any score. Limit to 50 words."
+                },
+                {
+                    "role": "user",
+                    "content": resume_text + "******" + job_description
+                }
+            ],
+            model="llama3-8b-8192",
+        )
+        l.append(chat_completion.choices[0].message.content)
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a helpful assistant which enables students to identify whether their skills are aligned with the job description. Your reply should be in the form of a score out of 10 and only the score. Nothing else. Only the score. Return in plain text"+l[0]+"THis is the feedback provided ensure that the score matches feedback. Return only score"
+                },
+                {
+                    "role": "user",
+                    "content": resume_text + "******" + job_description
+                }
+            ],
+            model="llama3-8b-8192",
+        )
+        l.append(chat_completion.choices[0].message.content)
+        return l
+    except Exception as e:
+        print(f"Error in get_groq_score: {str(e)}")
+        return ["Error processing request", "0"]
 
 def beautify_text(text):
-    client = Groq(api_key=GROQ_API)
+    if not GROQ_API:
+        print("Error: GROQ_API_KEY not configured")
+        return text  # Return original text if API key not available
     
-    print("Sending text to Groq:", text[:200])  # Print first 200 chars of input
-    
-    chat_completion = client.chat.completions.create(
+    try:
+        client = Groq(api_key=GROQ_API)
+        
+        print("Sending text to Groq:", text[:200])  # Print first 200 chars of input
+        
+        chat_completion = client.chat.completions.create(
         messages=[
             {
                 "role": "system",
@@ -1302,10 +1319,9 @@ def beautify_text(text):
         model="llama3-8b-8192",
     )
     
-    response = chat_completion.choices[0].message.content
-    print("Groq response:", response[:200])  # Print first 200 chars of response
-    
-    try:
+        response = chat_completion.choices[0].message.content
+        print("Groq response:", response[:200])  # Print first 200 chars of response
+        
         # Make sure we have valid JSON
         if not response.strip().startswith('{'):
             # Try to find JSON in the response
@@ -1322,6 +1338,12 @@ def beautify_text(text):
         # Return a basic structure if parsing fails
         return {
             "error": "Could not parse resume",
+            "raw_text": text
+        }
+    except Exception as e:
+        print(f"Error in beautify_text: {str(e)}")
+        return {
+            "error": f"Groq API error: {str(e)}",
             "raw_text": text
         }
 def extract_json_from_text(text):
