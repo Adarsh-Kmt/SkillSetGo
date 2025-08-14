@@ -1,102 +1,229 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Placement Stats</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
-</head>
-<body>
-    <h1>Placement Stats</h1>
-    <div id="charts-container">
-        <div style="width: 600px; height: 400px; margin-bottom: 20px;">
-            <canvas id="mean-package-chart"></canvas>
-        </div>
-        <div style="width: 600px; height: 400px; margin-bottom: 20px;">
-            <canvas id="offers-chart"></canvas>
-        </div>
-    </div>
-    <div id="summary-container">
-        <h2>Summary</h2>
-        <p id="summary-text"></p>
-    </div>
-    <button onclick="exportPDF()">Export as PDF</button>
+{% extends "base.html" %}
 
-    <script>
-        const stats = {{ stats | tojson }};
+{% block title %}SkillSetGo - Placement Statistics{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="text-muted">Placement Statistics</h2>
+                <button onclick="exportPDF()" class="btn btn-primary">
+                    <i class="fas fa-download me-2"></i>Export as PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="row g-4 mb-5">
+        <div class="col-lg-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-header text-white" style="background: var(--primary-color);">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Mean Package by Branch
+                    </h5>
+                </div>
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    <div style="width: 100%; max-width: 500px; height: 300px;">
+                        <canvas id="mean-package-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
         
-        // Prepare data for charts
-        const branches = stats.map(stat => stat.branch);
-        const meanPackages = stats.map(stat => stat.mean_lpa);
-        const offers = stats.map(stat => stat.number_of_offers);
+        <div class="col-lg-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-header text-white" style="background: var(--primary-color);">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Number of Offers by Branch
+                    </h5>
+                </div>
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    <div style="width: 100%; max-width: 500px; height: 300px;">
+                        <canvas id="offers-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        // Function to create a chart
-        function createChart(ctx, label, data, chartLabel) {
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: label,
-                    datasets: [{
-                        label: chartLabel,
-                        data: data,
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
+    <!-- Summary Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header text-white" style="background: var(--primary-color);">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list-alt me-2"></i>Branch-wise Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" style="background-color: var(--bg-secondary);">
+                            <thead style="background: var(--primary-color);">
+                                <tr>
+                                    <th class="text-white fw-semibold">Branch</th>
+                                    <th class="text-white fw-semibold">Mean Package (LPA)</th>
+                                    <th class="text-white fw-semibold">Number of Offers</th>
+                                </tr>
+                            </thead>
+                            <tbody id="summary-table" style="background-color: var(--bg-secondary);">
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+<script>
+    const stats = {{ stats | tojson }};
+    
+    // Prepare data for charts
+    const branches = stats.map(stat => stat.branch);
+    const meanPackages = stats.map(stat => stat.mean_lpa);
+    const offers = stats.map(stat => stat.number_of_offers);
+
+    // Chart configuration with consistent styling
+    const chartConfig = {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                labels: {
+                    color: '#6b7280',
+                    font: {
+                        family: 'Inter'
                     }
                 }
-            });
+            }
+        },
+        scales: {
+            x: {
+                ticks: {
+                    color: '#6b7280',
+                    font: {
+                        family: 'Inter'
+                    }
+                },
+                grid: {
+                    color: '#e5e7eb'
+                }
+            },
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    color: '#6b7280',
+                    font: {
+                        family: 'Inter'
+                    }
+                },
+                grid: {
+                    color: '#e5e7eb'
+                }
+            }
         }
+    };
 
-        // Create mean package chart
-        const meanPackageCtx = document.getElementById('mean-package-chart').getContext('2d');
-        createChart(meanPackageCtx, branches, meanPackages, 'Mean Package (LPA)');
+    // Create mean package chart
+    const meanPackageCtx = document.getElementById('mean-package-chart').getContext('2d');
+    new Chart(meanPackageCtx, {
+        type: 'bar',
+        data: {
+            labels: branches,
+            datasets: [{
+                label: 'Mean Package (LPA)',
+                data: meanPackages,
+                backgroundColor: '#3b82f6',
+                borderColor: '#2563eb',
+                borderWidth: 1,
+                borderRadius: 8,
+                borderSkipped: false,
+            }]
+        },
+        options: chartConfig
+    });
 
-        // Create offers chart
-        const offersCtx = document.getElementById('offers-chart').getContext('2d');
-        createChart(offersCtx, branches, offers, 'Number of Offers');
+    // Create offers chart
+    const offersCtx = document.getElementById('offers-chart').getContext('2d');
+    new Chart(offersCtx, {
+        type: 'bar',
+        data: {
+            labels: branches,
+            datasets: [{
+                label: 'Number of Offers',
+                data: offers,
+                backgroundColor: '#10b981',
+                borderColor: '#059669',
+                borderWidth: 1,
+                borderRadius: 8,
+                borderSkipped: false,
+            }]
+        },
+        options: chartConfig
+    });
 
-        // Generate summary text
-        const summaryText = stats.map(stat => 
-            `Branch: ${stat.branch}, Mean Package: ${stat.mean_lpa} LPA, Number of Offers: ${stat.number_of_offers}`
-        ).join('<br>');
-        document.getElementById('summary-text').innerHTML = summaryText;
+    // Populate summary table
+    const summaryTable = document.getElementById('summary-table');
+    summaryTable.innerHTML = stats.map(stat => `
+        <tr>
+            <td class="text-muted fw-semibold">${stat.branch}</td>
+            <td class="text-muted">₹${stat.mean_lpa}</td>
+            <td class="text-muted">${stat.number_of_offers}</td>
+        </tr>
+    `).join('');
 
-        // Function to export charts and summary as PDF
-        function exportPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+    // Enhanced PDF export function
+    function exportPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
 
-            doc.setFontSize(18);
-            doc.text('RV College of Engineering', 10, 10);
-            doc.setFontSize(14);
-            doc.text('Placement Statistics', 10, 20);
+        // Header
+        doc.setFontSize(20);
+        doc.setTextColor(59, 130, 246); // Primary blue
+        doc.text('SkillSetGo', 20, 20);
+        
+        doc.setFontSize(16);
+        doc.setTextColor(107, 114, 128); // Muted gray
+        doc.text('Placement Statistics Report', 20, 30);
+        
+        doc.setFontSize(10);
+        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 40);
 
-            // Add mean package chart
-            doc.setFontSize(16);
-            doc.text('Mean Package (LPA)', 10, 30);
-            doc.addImage(meanPackageCtx.canvas.toDataURL('image/png'), 'PNG', 10, 40, 180, 100);
+        // Add charts
+        doc.setFontSize(14);
+        doc.setTextColor(107, 114, 128);
+        doc.text('Mean Package by Branch (LPA)', 20, 55);
+        doc.addImage(meanPackageCtx.canvas.toDataURL('image/png'), 'PNG', 20, 65, 170, 80);
 
-            // Add offers chart
-            doc.text('Number of Offers', 10, 150);
-            doc.addImage(offersCtx.canvas.toDataURL('image/png'), 'PNG', 10, 160, 180, 100);
+        doc.text('Number of Offers by Branch', 20, 155);
+        doc.addImage(offersCtx.canvas.toDataURL('image/png'), 'PNG', 20, 165, 170, 80);
 
-            // Add summary
-            doc.addPage();
-            doc.setFontSize(16);
-            doc.text('Summary', 10, 10);
-            doc.setFontSize(12);
-            doc.text(summaryText.replace(/<br>/g, '\n'), 10, 20);
+        // Add summary table on new page
+        doc.addPage();
+        doc.setFontSize(16);
+        doc.setTextColor(107, 114, 128);
+        doc.text('Branch-wise Summary', 20, 20);
 
-            doc.save('placement_stats.pdf');
-        }
-    </script>
-</body>
-</html>
+        let yPosition = 35;
+        doc.setFontSize(10);
+        doc.text('Branch', 20, yPosition);
+        doc.text('Mean Package (LPA)', 80, yPosition);
+        doc.text('Number of Offers', 140, yPosition);
+        
+        yPosition += 10;
+        stats.forEach(stat => {
+            doc.text(stat.branch, 20, yPosition);
+            doc.text(`₹${stat.mean_lpa}`, 80, yPosition);
+            doc.text(stat.number_of_offers.toString(), 140, yPosition);
+            yPosition += 8;
+        });
+
+        doc.save('placement_statistics.pdf');
+    }
+</script>
+{% endblock %}

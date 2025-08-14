@@ -1,13 +1,21 @@
 {% extends "base.html" %}
 
-{% block title %}SkillSetGo - Dashboard{% endblock %}
+{% block title %}SkillSetGo - Student Dashboard{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12 mb-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <h2>Your Dashboard</h2>
-            <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">Logout</a>
+<!-- Header Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h2 class="text-gradient mb-2">
+                    <i class="fas fa-tachometer-alt me-2"></i>Your Dashboard
+                </h2>
+                <p class="text-muted mb-0">Welcome back! Here's your placement overview.</p>
+            </div>
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">
+                <i class="fas fa-sign-out-alt me-2"></i>Logout
+            </a>
         </div>
     </div>
 </div>
@@ -17,7 +25,7 @@
     {% if messages %}
         {% for category, message in messages %}
             <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                {{ message }}
+                <i class="fas fa-info-circle me-2"></i>{{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         {% endfor %}
@@ -25,93 +33,289 @@
 {% endwith %}
 
 {% if error %}
-<div class="alert alert-danger">{{ error }}</div>
+<div class="alert alert-danger">
+    <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+</div>
 {% endif %}
 
+<!-- Quick Navigation Section -->
+<div class="card mb-4 shadow-custom border-0">
+    <div class="card-header text-white" style="background: var(--primary-color);">
+        <h5 class="mb-0">
+            <i class="fas fa-compass me-2"></i>Quick Navigation
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <button class="btn btn-outline-primary w-100 quick-nav-btn" data-target="profile-section">
+                    <i class="fas fa-user me-2"></i>Profile
+                </button>
+            </div>
+            {% if job_offers %}
+            <div class="col-md-4">
+                <button class="btn btn-outline-success w-100 quick-nav-btn" data-target="offers-section">
+                    <i class="fas fa-gift me-2"></i>Job Offers
+                </button>
+            </div>
+            {% endif %}
+            {% if applied_jobs %}
+            <div class="col-md-4">
+                <button class="btn btn-outline-primary w-100 quick-nav-btn" data-target="applications-section">
+                    <i class="fas fa-paper-plane me-2"></i>Applications
+                </button>
+            </div>
+            {% endif %}
+            {% if jobs %}
+            <div class="col-md-4">
+                <button class="btn btn-outline-primary w-100 quick-nav-btn" data-target="available-jobs-section">
+                    <i class="fas fa-briefcase me-2"></i>Available Jobs
+                </button>
+            </div>
+            {% endif %}
+            {% if interviews %}
+            <div class="col-md-4">
+                <button class="btn btn-outline-primary w-100 quick-nav-btn" data-target="interviews-section">
+                    <i class="fas fa-calendar-alt me-2"></i>Interviews
+                </button>
+            </div>
+            {% else %}
+            <div class="col-md-4">
+                <button class="btn btn-outline-primary w-100 quick-nav-btn" data-target="interviews-section">
+                    <i class="fas fa-calendar-alt me-2"></i>Interviews
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
 <!-- Profile Section -->
-<div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0">Profile Information</h5>
+<div class="card mb-4 shadow-custom border-0" id="profile-section">
+    <div class="card-header text-white" style="background: var(--primary-color);">
+        <h5 class="mb-0">
+            <i class="fas fa-user me-2"></i>Profile Information
+        </h5>
     </div>
     <div class="card-body">
         {% if profile %}
-        <div class="row">
+        <div class="row g-4">
             <div class="col-md-6">
-                <p><strong>Name:</strong> {{ profile.name }}</p>
-                <p><strong>USN:</strong> {{ profile.usn }}</p>
-                <p><strong>Branch:</strong> {{ profile.branch }}</p>
+                <div class="profile-item">
+                    <label class="text-muted small">Full Name</label>
+                    <p class="fw-semibold mb-2 text-muted">
+                        <i class="fas fa-user text-primary me-2"></i>{{ profile.name }}
+                    </p>
+                </div>
+                <div class="profile-item">
+                    <label class="text-muted small">USN</label>
+                    <p class="fw-semibold mb-2 text-muted">
+                        <i class="fas fa-id-card text-primary me-2"></i>{{ profile.usn }}
+                    </p>
+                </div>
+                <div class="profile-item">
+                    <label class="text-muted small">Branch</label>
+                    <p class="fw-semibold mb-2 text-muted">
+                        <i class="fas fa-graduation-cap text-primary me-2"></i>{{ profile.branch }}
+                    </p>
+                </div>
             </div>
             <div class="col-md-6">
-                <p><strong>CGPA:</strong> {{ profile.cgpa }}</p>
-                <p><strong>Batch:</strong> {{ profile.batch }}</p>
-                <p><strong>Email:</strong> {{ profile.email_id }}</p>
+                <div class="profile-item">
+                    <label class="text-muted small">CGPA</label>
+                    <p class="fw-semibold mb-2 text-muted">
+                        <i class="fas fa-chart-line text-success me-2"></i>{{ profile.cgpa }}
+                    </p>
+                </div>
+                <div class="profile-item">
+                    <label class="text-muted small">Batch</label>
+                    <p class="fw-semibold mb-2 text-muted">
+                        <i class="fas fa-calendar text-primary me-2"></i>{{ profile.batch }}
+                    </p>
+                </div>
+                <div class="profile-item">
+                    <label class="text-muted small">Email</label>
+                    <p class="fw-semibold mb-2 text-muted">
+                        <i class="fas fa-envelope text-primary me-2"></i>{{ profile.email_id }}
+                    </p>
+                </div>
             </div>
         </div>
         {% else %}
-        <p>No profile information available.</p>
+        <div class="text-center py-4">
+            <i class="fas fa-user-times text-muted fs-2 mb-3"></i>
+            <p class="text-muted">No profile information available.</p>
+            <a href="#" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Complete Profile
+            </a>
+        </div>
         {% endif %}
     </div>
 </div>
+
 <style>
-    .text-accepted {
-        color: green !important;
-    }
-    .text-rejected {
-        color: red !important;
-    }
+.profile-item {
+    margin-bottom: 1rem;
+}
+
+.profile-item label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.offer-card {
+    background: var(--primary-color);
+    color: white;
+    border: none !important;
+    transition: all 0.3s ease;
+}
+
+.offer-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.status-accepted {
+    background: var(--success-color);
+    color: white;
+}
+
+.status-rejected {
+    background: var(--danger-color);
+    color: white;
+}
+
+.status-pending {
+    background: var(--warning-color);
+    color: white;
+}
+
+.quick-nav-btn {
+    transition: all 0.3s ease;
+    border-width: 2px;
+    font-weight: 500;
+    padding: 0.75rem 1rem;
+}
+
+.quick-nav-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.quick-nav-btn:active {
+    transform: translateY(0);
+}
+
+.quick-nav-btn i {
+    transition: transform 0.3s ease;
+}
+
+.quick-nav-btn:hover i {
+    transform: scale(1.1);
+}
 </style>
+
 <!-- Job Offers Section -->
 {% if job_offers %}
-<div class="card mb-4">
-    <div class="card-header bg-success text-white">
-        <h5 class="mb-0">🎉 Job Offers</h5>
+<div class="card mb-4 shadow-custom border-0" id="offers-section">
+    <div class="card-header text-white" style="background: var(--success-color);">
+        <h5 class="mb-0">
+            <i class="fas fa-gift me-2"></i>🎉 Job Offers
+        </h5>
     </div>
     <div class="card-body">
-        {% for offer in job_offers %}
-        <div class="offer-card mb-3 p-3 border rounded">
-            <h6 class="text-primary">{{ offer.company_name }}</h6>
-            <p class="mb-2"><strong>{{ offer.job_role }}</strong></p>
-            <p class="mb-2">Package: ₹{{ offer.ctc }} LPA</p>
-            <p class="mb-2">Type: {{ offer.job_type }}</p>
-            <p class="mb-2">Tier: {{ offer.salary_tier }}</p>
-            <p class="mb-2">Respond by: {{ offer.act_by_date }}</p>
-            {% if not offer.action or offer.action == 'PENDING' %}
-            <div class="mt-2">
-                <form action="{{ url_for('accept_offer', job_id=offer.job_id) }}" method="POST" style="display: inline;">
-                    <button type="submit" class="btn btn-success btn-sm">Accept Offer</button>
-                </form>
-                <form action="{{ url_for('reject_offer', job_id=offer.job_id) }}" method="POST" style="display: inline;">
-                    <button type="submit" class="btn btn-danger btn-sm">Reject Offer</button>
-                </form>
+        <div class="row g-4">
+            {% for offer in job_offers %}
+            <div class="col-lg-6">
+                <div class="offer-card p-4 rounded-lg shadow-md">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h6 class="text-white mb-1">
+                                <i class="fas fa-building me-2"></i>{{ offer.company_name }}
+                            </h6>
+                            <p class="text-dark mb-0 small">{{ offer.job_type }}</p>
+                        </div>
+                        <div class="text-end">
+                            <div class="badge bg-primary text-white">{{ offer.salary_tier }}</div>
+                        </div>
+                    </div>
+                    
+                    <h5 class="text-white mb-3">{{ offer.job_role }}</h5>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <i class="fas fa-money-bill-wave text-white-50 mb-1"></i>
+                                <div class="text-white-50 small mb-1">Package</div>
+                                <div class="text-white fw-bold">₹{{ offer.ctc }} LPA</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <i class="fas fa-clock text-white-50 mb-1"></i>
+                                <div class="text-white-50 small mb-1">Respond by</div>
+                                <div class="text-white fw-bold">{{ offer.act_by_date | format_date }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if not offer.action or offer.action == 'PENDING' %}
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-success flex-fill accept-offer-btn" 
+                                data-job-id="{{ offer.job_id }}" 
+                                data-company-name="{{ offer.company_name }}">
+                            <i class="fas fa-check me-2"></i>Accept
+                        </button>
+                        <button type="button" class="btn btn-light flex-fill reject-offer-btn" 
+                                data-job-id="{{ offer.job_id }}" 
+                                data-company-name="{{ offer.company_name }}">
+                            <i class="fas fa-times me-2"></i>Decline
+                        </button>
+                    </div>
+                    {% else %}
+                    <div class="text-center">
+                        <span class="status-badge {% if offer.action == 'ACCEPTED' %}status-accepted{% elif offer.action == 'REJECTED' %}status-rejected{% else %}status-pending{% endif %}">
+                            <i class="fas {% if offer.action == 'ACCEPTED' %}fa-check{% elif offer.action == 'REJECTED' %}fa-times{% else %}fa-clock{% endif %} me-2"></i>
+                            {{ offer.action }}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
-            {% else %}
-            <p class="mb-0 mt-2">
-                <span class="badge {% if offer.action == 'ACCEPTED' %}text-accepted{% elif offer.action == 'REJECTED' %}text-rejected{% else %}bg-danger{% endif %}">
-                    {{ offer.action }}
-                </span>
-            </p>
-            {% endif %}
+            {% endfor %}
         </div>
-        {% endfor %}
     </div>
 </div>
 {% endif %}
 
 <!-- Applied Jobs Section -->
 {% if applied_jobs %}
-<div class="card mb-4">
+<div class="card mb-4" id="applications-section">
     <div class="card-header">
-        <h5 class="mb-0">Applied Jobs</h5>
+        <h5 class="mb-0 text-muted">Applied Jobs</h5>
     </div>
     <div class="card-body">
         {% for job in applied_jobs %}
         <div class="job-card mb-3 p-3 border rounded">
-            <h6>{{ job.job_role }}</h6>
-            <p class="mb-2">Company: {{ job.company_name }}</p>
-            <p class="mb-2">Package: ₹{{ job.ctc }} LPA</p>
-            <p class="mb-2">Type: {{ job.job_type }}</p>
-            <p class="mb-2">Tier: {{ job.salary_tier }}</p>
-            <p class="mb-2">Apply by: {{ job.apply_by_date }}</p>
+            <h6 class="text-muted">{{ job.job_role }}</h6>
+            <p class="mb-2 text-muted">Company: {{ job.company_name }}</p>
+            <p class="mb-2 text-muted">Package: ₹{{ job.ctc }} LPA</p>
+            <p class="mb-2 text-muted">Type: {{ job.job_type }}</p>
+            <p class="mb-2 text-muted">Tier: {{ job.salary_tier }}</p>
+            <p class="mb-2 text-muted">Apply by: {{ job.apply_by_date | format_date }}</p>
             {% if job.status %}
             <p class="mb-0">
                 <span class="badge {% if job.status == 'Accepted' %}bg-success{% elif job.status == 'Rejected' %}bg-danger{% else %}bg-warning{% endif %}">
@@ -127,19 +331,19 @@
 
 <!-- Available Jobs Section -->
 {% if jobs %}
-<div class="card">
+<div class="card" id="available-jobs-section">
     <div class="card-header">
-        <h5 class="mb-0">Available Jobs</h5>
+        <h5 class="mb-0 text-muted">Available Jobs</h5>
     </div>
     <div class="card-body">
         {% for job in jobs %}
         <div class="job-card mb-3 p-3 border rounded">
-            <h6>{{ job.company_name }} - {{ job.job_role }}</h6>
-            <p class="mb-2">Package: ₹{{ job.ctc }} LPA</p>
-            <p class="mb-2">Tier: {{ job.salary_tier }}</p>
-            <p class="mb-2">Industry: {{ job.industry }}</p>
-            <p class="mb-2">Apply by: {{ job.apply_by_date }}</p>
-            <p class="mb-2">CGPA Cutoff: {{ job.cgpa_cutoff }}</p>
+            <h6 class="text-muted">{{ job.company_name }} - {{ job.job_role }}</h6>
+            <p class="mb-2 text-muted">Package: ₹{{ job.ctc }} LPA</p>
+            <p class="mb-2 text-muted">Tier: {{ job.salary_tier }}</p>
+            <p class="mb-2 text-muted">Industry: {{ job.industry }}</p>
+            <p class="mb-2 text-muted">Apply by: {{ job.apply_by_date | format_date }}</p>
+            <p class="mb-2 text-muted">CGPA Cutoff: {{ job.cgpa_cutoff }}</p>
             {% if job.can_apply %}
             <form action="{{ url_for('apply_job', job_id=job.job_id) }}" method="POST" style="display: inline;">
                 <input type="hidden" name="job_id" value="{{ job.job_id }}">
@@ -156,30 +360,30 @@
 
 <!-- Scheduled Interviews Section -->
 {% if interviews %}
-<div class="card">
+<div class="card" id="interviews-section">
     <div class="card-header">
-        <h5 class="mb-0">Scheduled Interviews</h5>
+        <h5 class="mb-0 text-muted">Scheduled Interviews</h5>
     </div>
     <div class="card-body">
         {% for interview in interviews %}
         <div class="interview-card mb-3 p-3 border rounded">
-            <h6>{{ interview.company_name }}</h6>
-            <p class="mb-2"><strong>Date and Time:</strong> {{ interview.interview_date }}</p>
+            <h6 class="text-muted">{{ interview.company_name }}</h6>
+            <p class="mb-2 text-muted"><strong>Date and Time:</strong> {{ interview.interview_date }}</p>
             <!-- <p class="mb-2"><strong>Time:</strong> {{ interview.interview_time }}</p> -->
-            <p class="mb-2"><strong>Location:</strong> {{ interview.venue }}</p>
-            <p class="mb-2"><strong>Job Role:</strong> {{ interview.job_role }}</p>
-            <p class="mb-2"><strong>Package:</strong> ₹{{ interview.ctc }} LPA</p>
+            <p class="mb-2 text-muted"><strong>Location:</strong> {{ interview.venue }}</p>
+            <p class="mb-2 text-muted"><strong>Job Role:</strong> {{ interview.job_role }}</p>
+            <p class="mb-2 text-muted"><strong>Package:</strong> ₹{{ interview.ctc }} LPA</p>
         </div>
         {% endfor %}
     </div>
 </div>
 {% else %}
-<div class="card">
+<div class="card" id="interviews-section">
     <div class="card-header">
-        <h5 class="mb-0">Scheduled Interviews</h5>
+        <h5 class="mb-0 text-muted">Scheduled Interviews</h5>
     </div>
     <div class="card-body">
-        <p>No interviews scheduled yet.</p>
+        <p class="text-muted">No interviews scheduled yet.</p>
     </div>
 </div>
 {% endif %}
@@ -204,7 +408,7 @@
                     </ul>
                     {% endif %}
                 </div>
-                <p>Are you sure you want to apply for this position?</p>
+                <p class="text-muted">Are you sure you want to apply for this position?</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -233,6 +437,84 @@
             }
         });
 
+        // Add event listeners for quick navigation buttons
+        document.querySelectorAll('.quick-nav-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const targetElement = document.getElementById(targetId);
+                
+                if (targetElement) {
+                    // Add smooth scrolling with offset for fixed navbar
+                    const navbarHeight = 80; // Adjust based on your navbar height
+                    const elementPosition = targetElement.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - navbarHeight;
+
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                    });
+                    
+                    // Add a subtle highlight effect
+                    targetElement.style.transition = 'box-shadow 0.3s ease';
+                    targetElement.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.3)';
+                    
+                    setTimeout(() => {
+                        targetElement.style.boxShadow = '';
+                    }, 2000);
+                }
+            });
+        });
+
+        // Handle navigation from external links with anchors
+        function scrollToSection(sectionId) {
+            const targetElement = document.getElementById(sectionId);
+            if (targetElement) {
+                const navbarHeight = 80;
+                const elementPosition = targetElement.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - navbarHeight;
+
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
+                
+                // Add highlight effect
+                targetElement.style.transition = 'box-shadow 0.3s ease';
+                targetElement.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.3)';
+                
+                setTimeout(() => {
+                    targetElement.style.boxShadow = '';
+                }, 2000);
+            }
+        }
+
+        // Check if page was loaded with an anchor and scroll to it
+        if (window.location.hash) {
+            const sectionId = window.location.hash.substring(1);
+            // Small delay to ensure page is fully rendered
+            setTimeout(() => {
+                scrollToSection(sectionId);
+            }, 100);
+        }
+
+        // Add event listeners for accept offer buttons
+        document.querySelectorAll('.accept-offer-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const jobId = this.getAttribute('data-job-id');
+                const companyName = this.getAttribute('data-company-name');
+                acceptOffer(jobId, companyName);
+            });
+        });
+
+        // Add event listeners for reject offer buttons
+        document.querySelectorAll('.reject-offer-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const jobId = this.getAttribute('data-job-id');
+                const companyName = this.getAttribute('data-company-name');
+                rejectOffer(jobId, companyName);
+            });
+        });
+
         // Add submit event listeners to all job application forms
         document.querySelectorAll('form').forEach(form => {
             form.addEventListener('submit', function(e) {
@@ -244,6 +526,67 @@
             });
         });
     });
+
+    // Function to accept offer
+    function acceptOffer(jobId, companyName) {
+        if (!confirm(`Are you sure you want to accept the offer from ${companyName}?`)) {
+            return;
+        }
+
+        fetch(`/student/accept-offer/${jobId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to accept offer');
+            }
+            return response.json();
+        })
+        .then(data => {
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+            alert('Congratulations! You have accepted the job offer!');
+            location.reload();
+        })
+        .catch(error => {
+            console.error('Error accepting offer:', error);
+            alert('Failed to accept offer. Please try again.');
+        });
+    }
+
+    // Function to reject offer
+    function rejectOffer(jobId, companyName) {
+        if (!confirm(`Are you sure you want to reject the offer from ${companyName}?`)) {
+            return;
+        }
+
+        fetch(`/student/reject-offer/${jobId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to reject offer');
+            }
+            return response.json();
+        })
+        .then(data => {
+            alert('You have rejected the job offer.');
+            location.reload();
+        })
+        .catch(error => {
+            console.error('Error rejecting offer:', error);
+            alert('Failed to reject offer. Please try again.');
+        });
+    }
 
     // Automatically hide flash messages after 5 seconds
     setTimeout(function() {

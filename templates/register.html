@@ -17,9 +17,9 @@
                         <input type="text" class="form-control" id="name" name="name" required>
                     </div>
                     <div class="mb-3">
-                        <label for="usn" class="form-label">USN (must start with 1RV)</label>
+                        <label for="usn" class="form-label">USN</label>
                         <input type="text" class="form-control" id="usn" name="usn" pattern="1RV.*" required>
-                        <div class="form-text">USN must start with 1RV</div>
+                        <div class="form-text text-muted">Must start with 1RV (e.g., 1RV21IS001)</div>
                     </div>
                     <div class="mb-3">
                         <label for="password" class="form-label">Password</label>
@@ -74,7 +74,7 @@
                     </div>
                 </form>
                 <div class="text-center mt-3">
-                    <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
+                    <p class="text-muted">Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
                 </div>
             </div>
         </div>

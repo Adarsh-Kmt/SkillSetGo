@@ -16,6 +16,38 @@ GROQ_API = "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"
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'dev-key-123')
 
+# Custom filter to format dates
+@app.template_filter('format_date')
+def format_date(date_string):
+    try:
+        if not date_string:
+            return 'N/A'
+        
+        # Try multiple date formats that might come from the backend
+        date_formats = [
+            '%Y-%m-%dT%H:%M:%SZ',                    # 2026-06-12T15:04:05Z
+            '%Y-%m-%d %H:%M:%S +0000 UTC',           # 2025-08-21 15:58:10 +0000 UTC
+            '%Y-%m-%d %H:%M:%S',                     # 2025-06-12 15:04:05
+            '%Y-%m-%dT%H:%M:%S',                     # 2025-06-12T15:04:05
+        ]
+        
+        dt_obj = None
+        for fmt in date_formats:
+            try:
+                dt_obj = datetime.strptime(str(date_string), fmt)
+                break
+            except ValueError:
+                continue
+        
+        if dt_obj:
+            # Format it to a more readable format
+            return dt_obj.strftime('%B %d, %Y at %I:%M %p')
+        else:
+            return str(date_string) if date_string else 'N/A'
+            
+    except (ValueError, TypeError) as e:
+        return str(date_string) if date_string else 'N/A'
+
 # Go backend API URL
 API_URL = 'http://localhost:8080'  # Adjust this to your Go server port
 
@@ -922,16 +954,17 @@ def accept_offer(job_id):
         
         if response.status_code == 200:
             flash('🎉 Congratulations! You have accepted the job offer!', 'success')
+            return jsonify({'success': True, 'message': 'Offer accepted successfully'})
         else:
             error_msg = response.json().get('error', 'Failed to accept offer')
             print(f"Error accepting offer: {error_msg}")
             flash(f'Failed to accept offer: {error_msg}', 'error')
+            return jsonify({'success': False, 'error': error_msg}), 400
             
     except Exception as e:
         print(f"Error accepting offer: {str(e)}")
         flash('An error occurred while accepting the offer', 'error')
-        
-    return redirect(url_for('dashboard'))
+        return jsonify({'success': False, 'error': 'An error occurred while accepting the offer'}), 500
 
 @app.route('/student/reject-offer/<int:job_id>', methods=['POST'])
 def reject_offer(job_id):
@@ -958,16 +991,17 @@ def reject_offer(job_id):
         
         if response.status_code == 200:
             flash('You have rejected the job offer', 'info')
+            return jsonify({'success': True, 'message': 'Offer rejected successfully'})
         else:
             error_msg = response.json().get('error', 'Failed to reject offer')
             print(f"Error rejecting offer: {error_msg}")
             flash(f'Failed to reject offer: {error_msg}', 'error')
+            return jsonify({'success': False, 'error': error_msg}), 400
             
     except Exception as e:
         print(f"Error rejecting offer: {str(e)}")
         flash('An error occurred while rejecting the offer', 'error')
-        
-    return redirect(url_for('dashboard'))
+        return jsonify({'success': False, 'error': 'An error occurred while rejecting the offer'}), 500
 
 @app.route('/student/placement-status')
 def get_placement_status():
@@ -1393,4 +1427,4 @@ def get_scheduled_interviews():
         print(f"Error fetching interview details: {str(e)}")
         return jsonify({'error': 'An unexpected error occurred'}), 500
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=True)

@@ -24,7 +24,7 @@
         <div class="card mb-3">
             <div class="card-body">
                 <h4 class="card-title">Summary</h4>
-                <p>{{ resume_data.get('summary', 'No summary available.') }}</p>
+                <p class="text-muted">{{ resume_data.get('summary', 'No summary available.') }}</p>
             </div>
         </div>
 
@@ -42,7 +42,7 @@
                 <h4 class="card-title">Experience</h4>
                 {% for exp in resume_data.get('experience', []) %}
                     <p><strong>{{ exp.get('position', 'N/A') }}</strong> at {{ exp.get('company', 'Unknown Company') }} ({{ exp.get('duration', 'N/A') }})</p>
-                    <p>{{ exp.get('description', 'No description available.') }}</p>
+                    <p class="text-muted">{{ exp.get('description', 'No description available.') }}</p>
                 {% endfor %}
             </div>
         </div>
@@ -52,7 +52,7 @@
                 <h4 class="card-title">Projects</h4>
                 {% for project in resume_data.get('projects', []) %}
                     <p><strong>{{ project.get('title', 'N/A') }}</strong></p>
-                    <p>{{ project.get('description', 'No details available.') }}</p>
+                    <p class="text-muted">{{ project.get('description', 'No details available.') }}</p>
                 {% endfor %}
             </div>
         </div>
@@ -60,7 +60,7 @@
         <div class="card mb-3">
             <div class="card-body">
                 <h4 class="card-title">Skills</h4>
-                <p>{{ ", ".join(resume_data.get('skills', [])) }}</p>
+                <p class="text-muted">{{ ", ".join(resume_data.get('skills', [])) }}</p>
             </div>
         </div>
 
