@@ -22,7 +22,7 @@
                     <p><strong>CGPA Cutoff:</strong> {{ job.cgpa_cutoff }}</p>
                 </div>
                 <div class="col-md-4">
-                    <p><strong>Apply By:</strong> {{ job.apply_by_date }}</p>
+                    <p><strong>Apply By:</strong> {{ job.apply_by_date | format_date }}</p>
                     <p><strong>Total Applications:</strong> {{ applications|length }}</p>
                 </div>
             </div>
@@ -64,8 +64,16 @@
                             <td>{{ app.created_at }}</td>
                             <td>
                                 {% if app.status == 'PENDING' %}
-                                <button onclick="offerJob({{ job.job_id }}, '{{ app.usn }}')" class="btn btn-success btn-sm">Offer Job</button>
-                                <button onclick="rejectApplication({{ job.job_id }}, '{{ app.usn }}')" class="btn btn-danger btn-sm">Reject</button>
+                                <button type="button" class="btn btn-success btn-sm offer-job-btn" 
+                                        data-job-id="{{ job.job_id }}" 
+                                        data-usn="{{ app.usn }}">
+                                    Offer Job
+                                </button>
+                                <button type="button" class="btn btn-danger btn-sm reject-app-btn" 
+                                        data-job-id="{{ job.job_id }}" 
+                                        data-usn="{{ app.usn }}">
+                                    Reject
+                                </button>
                                 {% endif %}
                             </td>
                         </tr>
@@ -81,6 +89,27 @@
 </div>
 
 <script>
+// Add event listeners when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Add event listeners for offer job buttons
+    document.querySelectorAll('.offer-job-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const jobId = this.getAttribute('data-job-id');
+            const usn = this.getAttribute('data-usn');
+            offerJob(jobId, usn);
+        });
+    });
+
+    // Add event listeners for reject application buttons
+    document.querySelectorAll('.reject-app-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const jobId = this.getAttribute('data-job-id');
+            const usn = this.getAttribute('data-usn');
+            rejectApplication(jobId, usn);
+        });
+    });
+});
+
 function offerJob(jobId, usn) {
     if (!confirm('Are you sure you want to offer this job to the student?')) return;
     

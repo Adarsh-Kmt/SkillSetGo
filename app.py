@@ -12,9 +12,46 @@ from groq import Groq
 
 
 load_dotenv()
-GROQ_API = "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"
+GROQ_API = os.getenv('GROQ_API_KEY')
+if not GROQ_API:
+    print("Warning: GROQ_API_KEY not found in environment variables")
+else:
+    print("Groq API key loaded successfully")
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'dev-key-123')
+
+# Custom filter to format dates
+@app.template_filter('format_date')
+def format_date(date_string):
+    try:
+        if not date_string:
+            return 'N/A'
+        
+        # Try multiple date formats that might come from the backend
+        date_formats = [
+            '%Y-%m-%dT%H:%M:%SZ',                    # 2026-06-12T15:04:05Z
+            '%Y-%m-%d %H:%M:%S +0000 UTC',           # 2025-08-21 15:58:10 +0000 UTC
+            '%Y-%m-%d %H:%M:%S',                     # 2025-06-12 15:04:05
+            '%Y-%m-%dT%H:%M:%S',                     # 2025-06-12T15:04:05
+        ]
+        
+        dt_obj = None
+        for fmt in date_formats:
+            try:
+                dt_obj = datetime.strptime(str(date_string), fmt)
+                break
+            except ValueError:
+                continue
+        
+        if dt_obj:
+            # Format it to a more readable format
+            return dt_obj.strftime('%B %d, %Y at %I:%M %p')
+        else:
+            return str(date_string) if date_string else 'N/A'
+            
+    except (ValueError, TypeError) as e:
+        return str(date_string) if date_string else 'N/A'
 
 # Go backend API URL
 API_URL = 'http://localhost:8080'  # Adjust this to your Go server port
@@ -922,16 +959,17 @@ def accept_offer(job_id):
         
         if response.status_code == 200:
             flash('🎉 Congratulations! You have accepted the job offer!', 'success')
+            return jsonify({'success': True, 'message': 'Offer accepted successfully'})
         else:
             error_msg = response.json().get('error', 'Failed to accept offer')
             print(f"Error accepting offer: {error_msg}")
             flash(f'Failed to accept offer: {error_msg}', 'error')
+            return jsonify({'success': False, 'error': error_msg}), 400
             
     except Exception as e:
         print(f"Error accepting offer: {str(e)}")
         flash('An error occurred while accepting the offer', 'error')
-        
-    return redirect(url_for('dashboard'))
+        return jsonify({'success': False, 'error': 'An error occurred while accepting the offer'}), 500
 
 @app.route('/student/reject-offer/<int:job_id>', methods=['POST'])
 def reject_offer(job_id):
@@ -958,16 +996,17 @@ def reject_offer(job_id):
         
         if response.status_code == 200:
             flash('You have rejected the job offer', 'info')
+            return jsonify({'success': True, 'message': 'Offer rejected successfully'})
         else:
             error_msg = response.json().get('error', 'Failed to reject offer')
             print(f"Error rejecting offer: {error_msg}")
             flash(f'Failed to reject offer: {error_msg}', 'error')
+            return jsonify({'success': False, 'error': error_msg}), 400
             
     except Exception as e:
         print(f"Error rejecting offer: {str(e)}")
         flash('An error occurred while rejecting the offer', 'error')
-        
-    return redirect(url_for('dashboard'))
+        return jsonify({'success': False, 'error': 'An error occurred while rejecting the offer'}), 500
 
 @app.route('/student/placement-status')
 def get_placement_status():
@@ -1169,44 +1208,56 @@ def extract_text_from_pdf(pdf_file):
     return text
 
 def get_groq_score(resume_text, job_description):
-    l=[]
-    client = Groq(api_key=GROQ_API)
-    chat_completion = client.chat.completions.create(
-        messages=[
-            {
-                "role": "system",
-                "content": "You are a helpful assistant which enables students to identify whether their skills are aligned with the job description. Your reply should be in the form of a feedback when given a resume content and JD. Both are separated by ******. Do not use bold formatting return in plain text. Do not include any score. Limit to 50 words."
-            },
-            {
-                "role": "user",
-                "content": resume_text + "******" + job_description
-            }
-        ],
-        model="llama3-8b-8192",
-    )
-    l.append(chat_completion.choices[0].message.content)
-    chat_completion = client.chat.completions.create(
-        messages=[
-            {
-                "role": "system",
-                "content": "You are a helpful assistant which enables students to identify whether their skills are aligned with the job description. Your reply should be in the form of a score out of 10 and only the score. Nothing else. Only the score. Return in plain text"+l[0]+"THis is the feedback provided ensure that the score matches feedback. Return only score"
-            },
-            {
-                "role": "user",
-                "content": resume_text + "******" + job_description
-            }
-        ],
-        model="llama3-8b-8192",
-    )
-    l.append(chat_completion.choices[0].message.content)
-    return l
+    if not GROQ_API:
+        return ["API key not configured", "0"]
+    
+    try:
+        l=[]
+        client = Groq(api_key=GROQ_API)
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a helpful assistant which enables students to identify whether their skills are aligned with the job description. Your reply should be in the form of a feedback when given a resume content and JD. Both are separated by ******. Do not use bold formatting return in plain text. Do not include any score. Limit to 50 words."
+                },
+                {
+                    "role": "user",
+                    "content": resume_text + "******" + job_description
+                }
+            ],
+            model="llama3-8b-8192",
+        )
+        l.append(chat_completion.choices[0].message.content)
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a helpful assistant which enables students to identify whether their skills are aligned with the job description. Your reply should be in the form of a score out of 10 and only the score. Nothing else. Only the score. Return in plain text"+l[0]+"THis is the feedback provided ensure that the score matches feedback. Return only score"
+                },
+                {
+                    "role": "user",
+                    "content": resume_text + "******" + job_description
+                }
+            ],
+            model="llama3-8b-8192",
+        )
+        l.append(chat_completion.choices[0].message.content)
+        return l
+    except Exception as e:
+        print(f"Error in get_groq_score: {str(e)}")
+        return ["Error processing request", "0"]
 
 def beautify_text(text):
-    client = Groq(api_key=GROQ_API)
+    if not GROQ_API:
+        print("Error: GROQ_API_KEY not configured")
+        return text  # Return original text if API key not available
     
-    print("Sending text to Groq:", text[:200])  # Print first 200 chars of input
-    
-    chat_completion = client.chat.completions.create(
+    try:
+        client = Groq(api_key=GROQ_API)
+        
+        print("Sending text to Groq:", text[:200])  # Print first 200 chars of input
+        
+        chat_completion = client.chat.completions.create(
         messages=[
             {
                 "role": "system",
@@ -1268,10 +1319,9 @@ def beautify_text(text):
         model="llama3-8b-8192",
     )
     
-    response = chat_completion.choices[0].message.content
-    print("Groq response:", response[:200])  # Print first 200 chars of response
-    
-    try:
+        response = chat_completion.choices[0].message.content
+        print("Groq response:", response[:200])  # Print first 200 chars of response
+        
         # Make sure we have valid JSON
         if not response.strip().startswith('{'):
             # Try to find JSON in the response
@@ -1288,6 +1338,12 @@ def beautify_text(text):
         # Return a basic structure if parsing fails
         return {
             "error": "Could not parse resume",
+            "raw_text": text
+        }
+    except Exception as e:
+        print(f"Error in beautify_text: {str(e)}")
+        return {
+            "error": f"Groq API error: {str(e)}",
             "raw_text": text
         }
 def extract_json_from_text(text):
@@ -1393,4 +1449,4 @@ def get_scheduled_interviews():
         print(f"Error fetching interview details: {str(e)}")
         return jsonify({'error': 'An unexpected error occurred'}), 500
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=True)

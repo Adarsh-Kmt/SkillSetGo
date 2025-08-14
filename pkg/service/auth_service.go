@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"log/slog"
 
 	db "github.com/adarsh-kmt/skillsetgo/pkg/db/config"
 	"github.com/adarsh-kmt/skillsetgo/pkg/db/sqlc"
@@ -32,6 +33,7 @@ func (as *AuthServiceImpl) LoginStudent(request *entity.LoginStudentRequest) (ac
 	}
 	studentId, err := db.Client.AuthenticateStudent(context.TODO(), params)
 	if err != nil {
+		slog.Error(err.Error())
 		if errors.Is(err, pgx.ErrNoRows) {
 			return "", &helper.HTTPError{StatusCode: 401, Error: "invalid username or password"}
 		} else {

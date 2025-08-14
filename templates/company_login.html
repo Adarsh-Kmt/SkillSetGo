@@ -3,35 +3,68 @@
 {% block title %}SkillSetGo - Company Login{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h2 class="card-title text-center mb-4">Company Login</h2>
+<div class="row justify-content-center">
+    <div class="col-lg-5 col-md-6">
+        <div class="card shadow-lg border-0 rounded-custom">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <div class="bg-gradient rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                        <i class="fas fa-briefcase text-white fs-4"></i>
+                    </div>
+                    <h3 class="card-title text-gradient">Company Login</h3>
+                    <p class="text-muted">Welcome back! Please sign in to your company account.</p>
+                </div>
+                
+                {% if error %}
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+                </div>
+                {% endif %}
+
+                <!-- Alert Messages -->
+                <div id="error-message" class="alert alert-danger" style="display: none;"></div>
+                <div id="success-message" class="alert alert-success" style="display: none;"></div>
+
+                <form method="POST" action="{{ url_for('company_login') }}" id="companyLoginForm">
+                    <div class="mb-4">
+                        <label for="username" class="form-label">
+                            <i class="fas fa-user me-2"></i>Username
+                        </label>
+                        <input type="text" class="form-control form-control-lg" id="username" name="username" required placeholder="Enter your username">
+                    </div>
                     
-                    {% if error %}
-                    <div class="alert alert-danger">{{ error }}</div>
-                    {% endif %}
-
-                    <!-- Alert Messages -->
-                    <div id="error-message" class="alert alert-danger" style="display: none;"></div>
-                    <div id="success-message" class="alert alert-success" style="display: none;"></div>
-
-                    <form method="POST" action="{{ url_for('company_login') }}">
-                        <div class="mb-3">
-                            <label for="username" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="username" name="username" required>
+                    <div class="mb-4">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock me-2"></i>Password
+                        </label>
+                        <div class="position-relative">
+                            <input type="password" class="form-control form-control-lg" id="password" name="password" required placeholder="Enter your password">
+                            <button type="button" class="btn btn-outline-secondary position-absolute top-50 end-0 translate-middle-y me-2" onclick="toggleCompanyPassword()">
+                                <i class="fas fa-eye" id="companyPasswordToggle"></i>
+                            </button>
                         </div>
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="password" name="password" required>
-                        </div>
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">Login</button>
-                            <a href="{{ url_for('company_register') }}" class="btn btn-outline-secondary">Register as Company</a>
-                        </div>
-                    </form>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mb-4">
+                        <button type="submit" class="btn btn-primary btn-lg" id="companyLoginButton">
+                            <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                        </button>
+                    </div>
+                    
+                    <!-- Test Credentials Button -->
+                    <div class="d-grid gap-2 mb-4">
+                        <button type="button" class="btn btn-outline-warning btn-sm" id="fillCompanyTestCredentials">
+                            <i class="fas fa-building-user me-2"></i>Fill Test Credentials
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="text-center">
+                    <p class="mb-0 text-muted">Don't have a company account? 
+                        <a href="{{ url_for('company_register') }}" class="text-decoration-none">
+                            <strong>Register here</strong>
+                        </a>
+                    </p>
                 </div>
             </div>
         </div>
@@ -40,5 +73,43 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+function toggleCompanyPassword() {
+    const passwordField = document.getElementById('password');
+    const passwordToggle = document.getElementById('companyPasswordToggle');
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        passwordToggle.classList.remove('fa-eye');
+        passwordToggle.classList.add('fa-eye-slash');
+    } else {
+        passwordField.type = 'password';
+        passwordToggle.classList.remove('fa-eye-slash');
+        passwordToggle.classList.add('fa-eye');
+    }
+}
+
+document.getElementById('companyLoginForm').addEventListener('submit', function(e) {
+    const loginButton = document.getElementById('companyLoginButton');
+    loginButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Signing In...';
+    loginButton.disabled = true;
+});
+
+// Fill test credentials function
+document.getElementById('fillCompanyTestCredentials').addEventListener('click', function() {
+    document.getElementById('username').value = 'softmicro';
+    document.getElementById('password').value = '1234';
+    
+    // Add a visual feedback
+    this.innerHTML = '<i class="fas fa-check me-2"></i>Test Credentials Filled!';
+    this.classList.remove('btn-outline-warning');
+    this.classList.add('btn-outline-success');
+    
+    setTimeout(() => {
+        this.innerHTML = '<i class="fas fa-building-user me-2"></i>Fill Test Credentials';
+        this.classList.remove('btn-outline-success');
+        this.classList.add('btn-outline-warning');
+    }, 2000);
+});
+</script>
 {% endblock %}

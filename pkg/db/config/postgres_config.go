@@ -32,9 +32,7 @@ func postgresConfiguration() (*postgresConfig, error) {
 
 	config := &postgresConfig{}
 
-
-	err := godotenv.Load("C:\\Users\\reach\\OneDrive\\Desktop\\SkillSetGo\\.env") // Specify the filename if it's named differently
-
+	err := godotenv.Load("/Users/adarsh-kmt/Desktop/Programming/Go/src/Personal/SkillSetGo/.env") // Specify the filename if it's named differently
 
 	if err != nil {
 		logger.Fatalf("Error loading .env file: %v", err)

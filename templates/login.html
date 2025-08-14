@@ -1,19 +1,25 @@
 {% extends "base.html" %}
 
-{% block title %}SkillSetGo - Login{% endblock %}
+{% block title %}SkillSetGo - Student Login{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <h3 class="card-title text-center mb-4">Student Login</h3>
+    <div class="col-lg-5 col-md-6">
+        <div class="card shadow-lg border-0 rounded-custom">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <div class="bg-gradient rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                        <i class="fas fa-id-card text-white fs-4"></i>
+                    </div>
+                    <h3 class="card-title text-gradient">Student Login</h3>
+                    <p class="text-muted">Welcome back! Please sign in to your account.</p>
+                </div>
                 
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         {% for category, message in messages %}
                             <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                {{ message }}
+                                <i class="fas fa-info-circle me-2"></i>{{ message }}
                                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                             </div>
                         {% endfor %}
@@ -21,25 +27,54 @@
                 {% endwith %}
 
                 {% if error %}
-                <div class="alert alert-danger">{{ error }}</div>
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+                </div>
                 {% endif %}
 
                 <form method="POST" action="{{ url_for('login') }}" id="loginForm">
-                    <div class="mb-3">
-                        <label for="usn" class="form-label">USN</label>
-                        <input type="text" class="form-control" id="usn" name="usn" required pattern="1RV.*" title="USN must start with 1RV">
-                        <div class="form-text">Enter your USN (e.g., 1RV21IS001)</div>
+                    <div class="mb-4">
+                        <label for="usn" class="form-label">
+                            <i class="fas fa-id-card me-2"></i>USN
+                        </label>
+                        <input type="text" class="form-control form-control-lg" id="usn" name="usn" required pattern="1RV.*" title="USN must start with 1RV" placeholder="Enter your USN">
+                        <div class="form-text text-muted">
+                            <i class="fas fa-info-circle me-1"></i>Must start with 1RV (e.g., 1RV21IS001)
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                    
+                    <div class="mb-4">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock me-2"></i>Password
+                        </label>
+                        <div class="position-relative">
+                            <input type="password" class="form-control form-control-lg" id="password" name="password" required placeholder="Enter your password">
+                            <button type="button" class="btn btn-outline-secondary position-absolute top-50 end-0 translate-middle-y me-2" onclick="togglePassword()">
+                                <i class="fas fa-eye" id="passwordToggle"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary" id="loginButton">Login</button>
+                    
+                    <div class="d-grid gap-2 mb-4">
+                        <button type="submit" class="btn btn-primary btn-lg" id="loginButton">
+                            <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                        </button>
+                    </div>
+                    
+                    <!-- Test Credentials Button -->
+                    <div class="d-grid gap-2 mb-4">
+                        <button type="button" class="btn btn-outline-warning btn-sm" id="fillTestCredentials">
+                            <i class="fas fa-user-cog me-2"></i>Fill Test Credentials
+                        </button>
                     </div>
                 </form>
-                <div class="text-center mt-3">
-                    <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+                
+                <div class="text-center">
+                    <p class="mb-0 text-muted">Don't have an account? 
+                        <a href="{{ url_for('register') }}" class="text-decoration-none">
+                            <strong>Register here</strong>
+                        </a>
+                    </p>
                 </div>
             </div>
         </div>
@@ -48,6 +83,45 @@
 {% endblock %}
 
 {% block scripts %}
+<script>
+function togglePassword() {
+    const passwordField = document.getElementById('password');
+    const passwordToggle = document.getElementById('passwordToggle');
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        passwordToggle.classList.remove('fa-eye');
+        passwordToggle.classList.add('fa-eye-slash');
+    } else {
+        passwordField.type = 'password';
+        passwordToggle.classList.remove('fa-eye-slash');
+        passwordToggle.classList.add('fa-eye');
+    }
+}
+
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    const loginButton = document.getElementById('loginButton');
+    loginButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Signing In...';
+    loginButton.disabled = true;
+});
+
+// Fill test credentials function
+document.getElementById('fillTestCredentials').addEventListener('click', function() {
+    document.getElementById('usn').value = '1RV22IS002';
+    document.getElementById('password').value = '12345';
+    
+    // Add a visual feedback
+    this.innerHTML = '<i class="fas fa-check me-2"></i>Test Credentials Filled!';
+    this.classList.remove('btn-outline-warning');
+    this.classList.add('btn-outline-success');
+    
+    setTimeout(() => {
+        this.innerHTML = '<i class="fas fa-user-cog me-2"></i>Fill Test Credentials';
+        this.classList.remove('btn-outline-success');
+        this.classList.add('btn-outline-warning');
+    }, 2000);
+});
+</script>
 <script>
 document.getElementById('loginForm').addEventListener('submit', function(e) {
     const usn = document.getElementById('usn').value.trim();

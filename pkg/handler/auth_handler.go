@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 
 	"github.com/adarsh-kmt/skillsetgo/pkg/entity"
@@ -32,6 +33,7 @@ func (ah *AuthHandler) LoginStudent(w http.ResponseWriter, r *http.Request) *hel
 	var request entity.LoginStudentRequest
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
+		slog.Error(err.Error())
 		return &helper.HTTPError{StatusCode: 400, Error: "invalid request body"}
 	}
 
