@@ -29,30 +29,28 @@ type postgresConfig struct {
 }
 
 func postgresConfiguration() (*postgresConfig, error) {
+    config := &postgresConfig{}
 
-	config := &postgresConfig{}
+    // Try to load .env if present (local dev), but don't fail if missing
+    _ = godotenv.Load() // Looks for ".env" in current dir by default
 
-	err := godotenv.Load("/Users/adarsh-kmt/Desktop/Programming/Go/src/Personal/SkillSetGo/.env") // Specify the filename if it's named differently
+    // Read values from environment variables
+    config.password = os.Getenv("DB_PASSWORD")
+    config.username = os.Getenv("DB_USERNAME")
+    config.port = os.Getenv("DB_PORT")
+    config.host = os.Getenv("DB_HOST")
+    config.database = os.Getenv("DB_DATABASE")
 
-	if err != nil {
-		logger.Fatalf("Error loading .env file: %v", err)
-	}
+    logger.Println("Loaded database configuration:")
+    logger.Println("host:", config.host)
+    logger.Println("port:", config.port)
+    logger.Println("database:", config.database)
+    logger.Println("username:", config.username)
+    // ⚠️ Do NOT log password in real deployments
 
-	config.password = os.Getenv("DB_PASSWORD")
-	config.username = os.Getenv("DB_USERNAME")
-	config.port = os.Getenv("DB_PORT")
-	config.host = os.Getenv("DB_HOST")
-	config.database = os.Getenv("DB_DATABASE")
-
-	logger.Println("password : " + config.password)
-	logger.Println("username : " + config.username)
-	logger.Println("port : " + config.port)
-	logger.Println("host : " + config.host)
-	logger.Println("database : " + config.database)
-
-	return config, nil
-
+    return config, nil
 }
+
 
 func PostgresDBClientInit() error {
 
