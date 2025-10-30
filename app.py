@@ -54,7 +54,7 @@ def format_date(date_string):
         return str(date_string) if date_string else 'N/A'
 
 # Go backend API URL
-API_URL = 'http://localhost:8080'  # Adjust this to your Go server port
+API_URL = 'https://skillsetgo-kdlc.onrender.com'  # Adjust this to your Go server port
 
 @app.route("/stats",methods=['GET'])
 def get_placement_stats():
