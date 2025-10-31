@@ -60,7 +60,7 @@ func PostgresDBClientInit() error {
 		return err
 	}
 
-	connString := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable", config.username, config.password, config.host, config.port, config.database)
+	connString := os.Getenv("DATABASE_URL")
 	ctx := context.Background()
 	connPool, err = pgxpool.New(ctx, connString)
 
